@@ -3,17 +3,17 @@
 > Juego de rol por texto impulsado por Inteligencia Artificial que actúa como Dungeon Master.
 
 El jugador crea un personaje, elige un mundo y vive una aventura narrada en tiempo real por una IA.
-Soporta múltiples modelos de IA: OpenAI (GPT), Anthropic (Claude) y modelos locales vía Ollama.
+Soporta múltiples modelos de IA: Anthropic (Claude), Ollama Cloud y modelos locales vía Ollama.
 
 ## Stack Tecnológico
 
 | Capa | Tecnología |
-|------|-----------|
+| ---- | ---------- |
 | Backend | Python 3.11+ / FastAPI |
 | Base de datos | PostgreSQL (prod) / SQLite (dev) |
 | ORM | SQLAlchemy 2.0 async |
 | Migraciones | Alembic |
-| IA | LiteLLM (abstrae OpenAI, Anthropic, Ollama) |
+| IA | LiteLLM (abstrae Anthropic, Ollama Cloud y Ollama Local) |
 | Frontend | HTML5 + Tailwind CSS (CDN) + JS vanilla |
 | Auth | JWT con python-jose |
 | Deploy | Render.com / Docker |
@@ -57,13 +57,32 @@ Abrí http://localhost:8000 en tu navegador.
 
 El juego soporta múltiples proveedores de IA a través de LiteLLM:
 
-| Proveedor | Modelo ejemplo | Variable de entorno |
-|-----------|---------------|-------------------|
-| OpenAI | `gpt-4o-mini` | `OPENAI_API_KEY` |
-| Anthropic | `claude-3-haiku-20240307` | `ANTHROPIC_API_KEY` |
-| Ollama | `ollama/llama3` | `OLLAMA_API_BASE` |
+| Proveedor | Modelo ejemplo | Configuración |
+| --------- | -------------- | ------------- |
+| Anthropic | `claude-sonnet-4-20250514` | API Key de Anthropic |
+| Ollama Cloud | `ollama/llama3` | API Key de Ollama Cloud |
+| Ollama Local | `ollama/llama3` | Ollama corriendo en tu PC (sin API key) |
 
-Configurá tu API key en `.env` o directamente desde la pantalla de Configuración del juego.
+### Anthropic (Claude)
+
+1. Creá una cuenta en [console.anthropic.com](https://console.anthropic.com)
+2. Generá una API Key
+3. En el juego: Configuración → Anthropic → pegá tu API Key
+
+### Ollama Cloud
+
+1. Registrate en [ollama.com](https://ollama.com)
+2. Obtené tu API Key desde el dashboard
+3. En el juego: Configuración → Ollama Cloud → elegí modelo → pegá tu API Key
+
+### Ollama Local (gratis, sin API key)
+
+1. Instalá Ollama: [ollama.com/download](https://ollama.com/download)
+2. Descargá un modelo: `ollama pull llama3`
+3. En el juego: Configuración → Ollama Local → elegí el modelo
+
+Configurá tu API key directamente desde la pantalla de Configuración del juego.
+La key se guarda solo en tu navegador — nunca se envía al servidor.
 
 ## Estructura del Proyecto
 

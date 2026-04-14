@@ -21,10 +21,10 @@ class Settings(BaseSettings):
     jwt_expiration_minutes: int = 1440  # 24 horas
 
     # --- IA ---
-    default_ai_model: str = "gpt-4o-mini"
-    openai_api_key: str = ""
+    default_ai_model: str = "claude-3-haiku-20240307"
     anthropic_api_key: str = ""
     ollama_api_base: str = "http://localhost:11434"
+    ollama_api_key: str = ""
 
     # --- Servidor ---
     host: str = "0.0.0.0"
