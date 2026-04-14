@@ -3,17 +3,24 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class CharacterStats(BaseModel):
-    """Stats del personaje estilo D&D."""
-    fuerza: int = Field(ge=1, le=20, default=10)
-    destreza: int = Field(ge=1, le=20, default=10)
-    constitucion: int = Field(ge=1, le=20, default=10)
-    inteligencia: int = Field(ge=1, le=20, default=10)
-    sabiduria: int = Field(ge=1, le=20, default=10)
-    carisma: int = Field(ge=1, le=20, default=10)
+    """Stats del personaje estilo D&D 5e."""
+    fuerza: int = Field(ge=3, le=18, default=10)
+    destreza: int = Field(ge=3, le=18, default=10)
+    constitucion: int = Field(ge=3, le=18, default=10)
+    inteligencia: int = Field(ge=3, le=18, default=10)
+    sabiduria: int = Field(ge=3, le=18, default=10)
+    carisma: int = Field(ge=3, le=18, default=10)
+
+    @model_validator(mode="after")
+    def validate_total(self):
+        total = self.fuerza + self.destreza + self.constitucion + self.inteligencia + self.sabiduria + self.carisma
+        if total > 80:
+            raise ValueError(f"Total de stats ({total}) supera el máximo permitido de 80.")
+        return self
 
 
 class CharacterCreate(BaseModel):

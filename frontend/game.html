@@ -46,14 +46,16 @@
             </div>
 
             <!-- Dados rápidos -->
-            <div class="flex gap-2 mb-3 flex-wrap justify-center" id="dice-bar">
-                <button onclick="rollDice(4)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d4</button>
-                <button onclick="rollDice(6)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d6</button>
-                <button onclick="rollDice(8)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d8</button>
-                <button onclick="rollDice(10)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d10</button>
-                <button onclick="rollDice(12)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d12</button>
-                <button onclick="rollDice(20)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300 font-bold">d20</button>
-                <span id="dice-result" class="text-amber-400 font-bold ml-2 self-center"></span>
+            <div class="flex gap-2 mb-3 flex-wrap justify-center items-center" id="dice-bar">
+                <span class="text-gray-500 text-xs mr-1">🎲 Tirar:</span>
+                <button onclick="rollDice(4)" title="d4 — Daño de daga, curación menor" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d4</button>
+                <button onclick="rollDice(6)" title="d6 — Daño de espada corta, bola de fuego" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d6</button>
+                <button onclick="rollDice(8)" title="d8 — Daño de espada larga, curación" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d8</button>
+                <button onclick="rollDice(10)" title="d10 — Daño de alabarda, armas pesadas" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d10</button>
+                <button onclick="rollDice(12)" title="d12 — Daño de hacha grande (Bárbaro)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d12</button>
+                <button onclick="rollDice(20)" title="d20 — Ataques, salvaciones, habilidades (el más importante)" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300 font-bold border border-amber-600">d20</button>
+                <span id="dice-result" class="text-amber-400 font-bold ml-2 self-center transition-transform"></span>
+                <span id="dice-used-msg" class="text-gray-600 text-xs ml-1 hidden">(ya tiraste este turno)</span>
                 <div class="ml-auto flex gap-2">
                     <button onclick="saveGame()" class="bg-emerald-800 hover:bg-emerald-700 px-3 py-1 rounded text-sm text-white">💾 Guardar</button>
                     <button onclick="exitGame()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-white">🚪 Salir</button>

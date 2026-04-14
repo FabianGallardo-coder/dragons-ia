@@ -5,6 +5,7 @@
 
 let currentDiceResult = null;
 let isProcessing = false;
+let diceUsedThisTurn = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
     requireAuth();
@@ -93,7 +94,10 @@ async function handleAction(e) {
         addSystemMessage('❌ Error: ' + err.message);
     } finally {
         currentDiceResult = null;
+        diceUsedThisTurn = false;
+        _enableDiceButtons(true);
         document.getElementById('dice-result').textContent = '';
+        document.getElementById('dice-used-msg').classList.add('hidden');
         isProcessing = false;
         showLoading(false);
         scrollToBottom();
@@ -101,17 +105,37 @@ async function handleAction(e) {
 }
 
 /**
- * Tira un dado del tipo indicado.
+ * Tira un dado del tipo indicado. Solo 1 tiro por turno.
  */
 function rollDice(sides) {
+    if (diceUsedThisTurn) {
+        return; // ya tiró este turno
+    }
+    diceUsedThisTurn = true;
+
     const result = Math.floor(Math.random() * sides) + 1;
     currentDiceResult = result;
     const display = document.getElementById('dice-result');
     display.textContent = `🎲 d${sides}: ${result}`;
 
+    // Deshabilitar botones de dados hasta el próximo turno
+    _enableDiceButtons(false);
+    document.getElementById('dice-used-msg').classList.remove('hidden');
+
     // Animación breve
     display.classList.add('scale-125');
     setTimeout(() => display.classList.remove('scale-125'), 200);
+}
+
+/**
+ * Habilita o deshabilita los botones de dados.
+ */
+function _enableDiceButtons(enabled) {
+    document.querySelectorAll('#dice-bar .dice-btn').forEach(btn => {
+        btn.disabled = !enabled;
+        btn.classList.toggle('opacity-40', !enabled);
+        btn.classList.toggle('cursor-not-allowed', !enabled);
+    });
 }
 
 /**
