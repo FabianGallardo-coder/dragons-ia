@@ -66,4 +66,4 @@ def calculate_hp(character_class: str, constitucion: int) -> int:
         "Bárbaro": 12,
     }
     base_hp = hit_dice.get(character_class, 8)
-    return base_hp + stat_modifier(constitucion)
+    return max(1, base_hp + stat_modifier(constitucion))

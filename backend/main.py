@@ -37,12 +37,24 @@ app = FastAPI(
 )
 
 # ── CORS ───────────────────────────────────────────────────────
+_allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+# En producción (Render), el frontend se sirve desde el mismo origin,
+# así que CORS no aplica. Igualmente permitimos el dominio de Render.
+if not settings.debug:
+    _allowed_origins.append("https://dragons-ia.onrender.com")
+else:
+    _allowed_origins.append("*")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # ── Routers de la API ──────────────────────────────────────────

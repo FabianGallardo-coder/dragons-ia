@@ -21,6 +21,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         const charId = save.character_id;
         const character = await apiGet(`/characters/${charId}`);
 
+        // Verificar si la partida sigue activa
+        if (!save.is_active) {
+            addSystemMessage('💀 Esta partida ha terminado. Tu personaje ha caído.');
+            document.getElementById('action-form').style.display = 'none';
+        }
+
         // Header info
         document.getElementById('char-info').textContent =
             `${character.name} — ${character.race} ${character.character_class} Nv.${character.level}`;

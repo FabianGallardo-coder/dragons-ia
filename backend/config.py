@@ -17,6 +17,8 @@ class Settings(BaseSettings):
 
     # --- JWT ---
     jwt_secret_key: str = "cambia-esto-por-un-secreto-largo-y-aleatorio"
+    # IMPORTANTE: En producción, configurar JWT_SECRET_KEY como variable de entorno
+    # con al menos 32 caracteres aleatorios.
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 1440  # 24 horas
 

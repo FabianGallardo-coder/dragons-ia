@@ -3,6 +3,7 @@ Router del juego — Acciones del jugador, nueva partida, guardar/cargar.
 """
 
 import json
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -43,9 +44,47 @@ def _serialize_history(history: list[dict]) -> str:
     return json.dumps(history, ensure_ascii=False)
 
 
+# Regex para parsear la línea [GAME_DATA: ...] del narrative
+_GAME_DATA_RE = re.compile(
+    r"\[GAME_DATA:\s*hp_change\s*=\s*(-?\d+)\s*,\s*xp_gain\s*=\s*(\d+)\s*,\s*alive\s*=\s*(true|false)\s*\]",
+    re.IGNORECASE,
+)
+
+
+def _parse_game_data(narrative: str) -> tuple[str, int, int, bool]:
+    """Extrae datos de juego del narrative y los limpia.
+
+    Returns:
+        (narrative_limpio, hp_change, xp_gain, alive)
+    """
+    match = _GAME_DATA_RE.search(narrative)
+    if not match:
+        return narrative, 0, 0, True
+
+    hp_change = int(match.group(1))
+    xp_gain = int(match.group(2))
+    alive = match.group(3).lower() == "true"
+
+    # Remover la línea GAME_DATA del texto visible
+    clean_narrative = narrative[: match.start()].rstrip()
+    return clean_narrative, hp_change, xp_gain, alive
+
+
+def _apply_game_state(character: Character, hp_change: int, xp_gain: int, alive: bool) -> None:
+    """Aplica cambios de estado al personaje."""
+    character.hp_current = max(0, min(character.hp_max, character.hp_current + hp_change))
+    character.experience += xp_gain
+    if character.hp_current <= 0 or not alive:
+        character.hp_current = 0
+        character.is_alive = False
+
+
 def _char_to_dict(char: Character) -> dict:
     """Convierte Character ORM a dict para el prompt."""
-    stats = json.loads(char.stats) if isinstance(char.stats, str) else char.stats
+    try:
+        stats = json.loads(char.stats) if isinstance(char.stats, str) else char.stats
+    except json.JSONDecodeError:
+        stats = {}
     return {
         "name": char.name,
         "race": char.race,
@@ -176,11 +215,21 @@ async def game_action(
 
     # Llamar a la IA
     try:
-        narrative = await get_ai_response(
+        raw_narrative = await get_ai_response(
             ai_messages, model=data.ai_model, api_key=data.api_key
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
+
+    # Parsear datos de juego y limpiar el narrative
+    narrative, hp_change, xp_gain, alive = _parse_game_data(raw_narrative)
+
+    # Actualizar estado del personaje
+    _apply_game_state(character, hp_change, xp_gain, alive)
+
+    # Si el personaje muere, desactivar la partida
+    if not character.is_alive:
+        save.is_active = False
 
     # Agregar respuesta al historial
     history.append({
