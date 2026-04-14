@@ -206,7 +206,15 @@
                 if (exists) {
                     select.value = config.model;
                 } else {
-                    document.getElementById('ai-model-custom').value = config.model;
+                    // Solo poner en custom si es realmente un modelo personalizado,
+                    // no un modelo obsoleto de la lista anterior
+                    const isKnownPrefix = Object.values(MODELS).flat().some(m =>
+                        config.model.startsWith('ollama/') || config.model.startsWith('claude')
+                    );
+                    if (!isKnownPrefix) {
+                        document.getElementById('ai-model-custom').value = config.model;
+                    }
+                    // Si era un modelo conocido pero ya no existe, limpiar la config guardada
                 }
             }
             if (config.apiKey) document.getElementById('api-key').value = config.apiKey;
