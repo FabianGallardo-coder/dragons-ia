@@ -24,9 +24,8 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Crea las tablas al iniciar (solo útil con SQLite en desarrollo)."""
-    if settings.is_sqlite:
-        await create_tables()
+    """Crea las tablas de la BD al iniciar si no existen."""
+    await create_tables()
     yield
 
 
