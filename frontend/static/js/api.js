@@ -10,11 +10,11 @@ const API_BASE = '';  // Mismo origen
  */
 async function apiGet(path) {
     const token = localStorage.getItem('dia_token');
-    const res = await fetch(`${API_BASE}${path}`, {
-        headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-        },
-    });
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(`${API_BASE}${path}`, { headers });
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Error de conexión' }));
         throw new Error(err.detail || `Error ${res.status}`);
@@ -27,12 +27,13 @@ async function apiGet(path) {
  */
 async function apiPost(path, body) {
     const token = localStorage.getItem('dia_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}${path}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-        },
+        headers,
         body: JSON.stringify(body),
     });
     if (!res.ok) {
@@ -47,11 +48,13 @@ async function apiPost(path, body) {
  */
 async function apiDelete(path) {
     const token = localStorage.getItem('dia_token');
+    const headers = {};
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
     const res = await fetch(`${API_BASE}${path}`, {
         method: 'DELETE',
-        headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
-        },
+        headers,
     });
     if (!res.ok && res.status !== 204) {
         const err = await res.json().catch(() => ({ detail: 'Error de conexión' }));
