@@ -1,11 +1,12 @@
 """
 Servicio de IA — Abstracción sobre LiteLLM.
 
-Maneja llamadas a cualquier modelo de IA (OpenAI, Anthropic, Ollama)
+Maneja llamadas a cualquier modelo de IA (Anthropic, Ollama Cloud, Ollama Local)
 a través de LiteLLM con manejo de errores y fallbacks.
 """
 
 import logging
+import os
 
 import litellm
 
@@ -39,11 +40,26 @@ async def get_ai_response(
     """
     target_model = model or settings.default_ai_model
 
-    # Construir kwargs opcionales
+    # Construir kwargs
     kwargs: dict = {"model": target_model, "messages": messages, "max_tokens": 600}
 
     if api_key:
         kwargs["api_key"] = api_key
+
+    # Detectar si es Ollama y configurar api_base
+    if target_model.startswith("ollama/"):
+        if api_key:
+            # Ollama Cloud: usar endpoint remoto
+            kwargs["api_base"] = "https://api.ollama.com"
+        else:
+            # Ollama Local: usar endpoint local
+            kwargs["api_base"] = settings.ollama_api_base
+    elif target_model.startswith("claude"):
+        # Asegurar que Anthropic reciba la API key
+        if not api_key and settings.anthropic_api_key:
+            kwargs["api_key"] = settings.anthropic_api_key
+
+    logger.info("Llamando a modelo: %s", target_model)
 
     try:
         response = await litellm.acompletion(**kwargs)
@@ -55,7 +71,7 @@ async def get_ai_response(
     except litellm.exceptions.AuthenticationError:
         logger.error("Error de autenticación con el modelo %s", target_model)
         raise RuntimeError(
-            "Error de autenticación con el proveedor de IA. Verifica tu API key."
+            "Error de autenticación. Verificá tu API Key en Configuración."
         )
 
     except litellm.exceptions.RateLimitError:
@@ -64,11 +80,17 @@ async def get_ai_response(
             "Se alcanzó el límite de solicitudes. Intenta de nuevo en unos segundos."
         )
 
-    except litellm.exceptions.APIConnectionError:
-        logger.error("Error de conexión con el modelo %s", target_model)
+    except litellm.exceptions.APIConnectionError as exc:
+        logger.error("Error de conexión con el modelo %s: %s", target_model, exc)
+        if target_model.startswith("ollama/"):
+            raise RuntimeError(
+                "No se pudo conectar con Ollama. "
+                "Si usás Ollama Local, verificá que esté corriendo. "
+                "Si usás Ollama Cloud, verificá tu API Key."
+            )
         raise RuntimeError(
-            "No se pudo conectar con el proveedor de IA. "
-            "Si usas Ollama, verifica que esté corriendo."
+            f"No se pudo conectar con el proveedor de IA ({target_model}). "
+            "Verificá tu API Key y conexión a internet."
         )
 
     except Exception as exc:
