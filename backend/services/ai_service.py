@@ -41,7 +41,7 @@ async def get_ai_response(
     target_model = model or settings.default_ai_model
 
     # Construir kwargs
-    kwargs: dict = {"model": target_model, "messages": messages, "max_tokens": 600}
+    kwargs: dict = {"model": target_model, "messages": messages, "max_tokens": 2048}
 
     if api_key:
         kwargs["api_key"] = api_key
@@ -64,14 +64,38 @@ async def get_ai_response(
         if not api_key and settings.anthropic_api_key:
             kwargs["api_key"] = settings.anthropic_api_key
 
-    logger.info("Llamando a modelo: %s", target_model)
+    logger.info("Llamando a modelo: %s (kwargs.model=%s)", target_model, kwargs["model"])
 
     try:
         response = await litellm.acompletion(**kwargs)
-        content = response.choices[0].message.content
-        if not content:
-            raise RuntimeError("El modelo retornó una respuesta vacía.")
+        msg = response.choices[0].message
+
+        # Extraer contenido — algunos modelos "thinking" ponen el texto final
+        # en content y el razonamiento en otro campo. Si content está vacío,
+        # intentar extraer de campos alternativos.
+        content = msg.content or ""
+
+        # Fallback: buscar en campos de modelos thinking
+        if not content.strip():
+            # Algunos modelos devuelven reasoning_content o thinking
+            for attr in ("reasoning_content", "thinking"):
+                alt = getattr(msg, attr, None)
+                if alt and alt.strip():
+                    content = alt
+                    break
+
+        if not content.strip():
+            logger.warning(
+                "Respuesta vacía del modelo %s. Response: %s",
+                target_model,
+                response.model_dump_json()[:500] if hasattr(response, "model_dump_json") else str(response)[:500],
+            )
+            raise RuntimeError("El modelo retornó una respuesta vacía. Probá con otro modelo.")
         return content.strip()
+
+    except RuntimeError:
+        # Re-lanzar RuntimeErrors propios sin envolverlos
+        raise
 
     except litellm.exceptions.AuthenticationError:
         logger.error("Error de autenticación con el modelo %s", target_model)
