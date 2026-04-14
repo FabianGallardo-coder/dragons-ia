@@ -42,6 +42,20 @@ class Settings(BaseSettings):
         """Detecta si se está usando SQLite."""
         return "sqlite" in self.database_url
 
+    @property
+    def async_database_url(self) -> str:
+        """Convierte la URL de BD al formato async correspondiente.
+
+        Render provee `postgresql://...` pero SQLAlchemy async necesita
+        `postgresql+asyncpg://...`. Esta propiedad hace la conversión automática.
+        """
+        url = self.database_url
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+
 
 @lru_cache()
 def get_settings() -> Settings:

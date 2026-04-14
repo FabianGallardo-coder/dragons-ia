@@ -21,8 +21,8 @@ import backend.models  # noqa: F401
 config = context.config
 settings = get_settings()
 
-# Sobreescribir la URL del alembic.ini con la de la app
-config.set_main_option("sqlalchemy.url", settings.database_url)
+# Sobreescribir la URL del alembic.ini con la de la app (formato async)
+config.set_main_option("sqlalchemy.url", settings.async_database_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

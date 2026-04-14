@@ -18,7 +18,7 @@ if settings.is_sqlite:
     # SQLite necesita check_same_thread=False para async
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 
-engine = create_async_engine(settings.database_url, **engine_kwargs)
+engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
