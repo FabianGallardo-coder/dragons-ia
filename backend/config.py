@@ -33,7 +33,7 @@ class Settings(BaseSettings):
 
     # --- Donaciones ---
     paypal_donate_link: str = ""
-    mercadopago_donate_link: str = ""
+    mercadopago_donate_link: str = "link.mercadopago.com.ar/dragonsandia"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
