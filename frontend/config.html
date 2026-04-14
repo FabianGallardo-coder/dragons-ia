@@ -45,6 +45,12 @@
                 </p>
             </div>
 
+            <!-- Tutorial -->
+            <div id="tutorial-box" class="bg-gray-900 border border-gray-700 rounded-lg p-4">
+                <h3 class="text-amber-400 font-bold text-sm mb-2">📖 ¿Cómo obtener tu API Key?</h3>
+                <div id="tutorial-content" class="text-gray-400 text-xs leading-relaxed space-y-2"></div>
+            </div>
+
             <!-- Idioma -->
             <div>
                 <label class="block text-gray-300 mb-1">Idioma de la aventura</label>
@@ -106,6 +112,59 @@
             ollama_local: '',
         };
 
+        const TUTORIALS = {
+            anthropic: `
+                <p class="font-semibold text-gray-300">Pasos para obtener tu API Key de Anthropic:</p>
+                <ol class="list-decimal list-inside space-y-1 ml-1">
+                    <li>Andá a <a href="https://console.anthropic.com/" target="_blank" class="text-amber-400 underline hover:text-amber-300">console.anthropic.com</a></li>
+                    <li>Creá una cuenta o iniciá sesión</li>
+                    <li>En el menú lateral, hacé clic en <strong class="text-gray-200">API Keys</strong></li>
+                    <li>Clic en <strong class="text-gray-200">Create Key</strong></li>
+                    <li>Copiá la key (empieza con <code class="bg-gray-800 px-1 rounded">sk-ant-...</code>) y pegala arriba</li>
+                </ol>
+                <p class="mt-2 text-yellow-500/80">⚠️ Anthropic requiere agregar créditos (mínimo ~$5 USD) para usar la API. Tienen un free tier muy limitado.</p>
+                <p class="mt-1">💡 <strong class="text-gray-300">Recomendado:</strong> Claude 3 Haiku es el modelo más económico (~$0.25/millón de tokens).</p>
+            `,
+            ollama_cloud: `
+                <p class="font-semibold text-gray-300">Pasos para obtener tu API Key de Ollama Cloud:</p>
+                <ol class="list-decimal list-inside space-y-1 ml-1">
+                    <li>Andá a <a href="https://ollama.com/" target="_blank" class="text-amber-400 underline hover:text-amber-300">ollama.com</a></li>
+                    <li>Hacé clic en <strong class="text-gray-200">Sign In</strong> (arriba a la derecha)</li>
+                    <li>Creá una cuenta con Google o GitHub</li>
+                    <li>Una vez logueado, andá a <a href="https://ollama.com/settings/keys" target="_blank" class="text-amber-400 underline hover:text-amber-300">ollama.com/settings/keys</a></li>
+                    <li>Clic en <strong class="text-gray-200">New API Key</strong></li>
+                    <li>Ponele un nombre (ej: "dragons-ia") y copiá la key generada</li>
+                    <li>Pegala arriba en el campo API Key</li>
+                </ol>
+                <p class="mt-2">💡 <strong class="text-gray-300">Recomendado:</strong> Gemma 4 — excelente para rol y narrativa.</p>
+            `,
+            ollama_local: `
+                <p class="font-semibold text-gray-300">Pasos para usar Ollama en tu PC (sin API key):</p>
+                <ol class="list-decimal list-inside space-y-1 ml-1">
+                    <li>Descargá Ollama desde <a href="https://ollama.com/download" target="_blank" class="text-amber-400 underline hover:text-amber-300">ollama.com/download</a></li>
+                    <li>Instalá y ejecutá Ollama</li>
+                    <li>Abrí una terminal (CMD o PowerShell) y ejecutá:</li>
+                </ol>
+                <div class="bg-gray-800 rounded p-2 mt-2 font-mono text-xs">
+                    <p class="text-green-400">$ ollama pull llama3</p>
+                    <p class="text-gray-500 mt-1"># Esto descarga el modelo (~4.7 GB)</p>
+                    <p class="text-gray-500"># Una vez descargado, el juego lo usará automáticamente</p>
+                </div>
+                <p class="mt-2">Para otros modelos:</p>
+                <div class="bg-gray-800 rounded p-2 mt-1 font-mono text-xs space-y-1">
+                    <p class="text-green-400">$ ollama pull mistral</p>
+                    <p class="text-green-400">$ ollama pull gemma2</p>
+                    <p class="text-green-400">$ ollama pull phi3</p>
+                </div>
+                <p class="mt-2 text-yellow-500/80">⚠️ Ollama debe estar corriendo mientras jugás. Verificá con:</p>
+                <div class="bg-gray-800 rounded p-2 mt-1 font-mono text-xs">
+                    <p class="text-green-400">$ ollama list</p>
+                    <p class="text-gray-500"># Debería mostrar los modelos descargados</p>
+                </div>
+                <p class="mt-2">💡 <strong class="text-gray-300">Requisitos:</strong> Mínimo 8 GB de RAM. Para modelos grandes (70B), 32 GB+.</p>
+            `,
+        };
+
         function updateModels(provider) {
             const select = document.getElementById('ai-model');
             select.innerHTML = '';
@@ -121,6 +180,14 @@
             // Ocultar API key para Ollama local
             document.getElementById('api-key-section').style.display =
                 provider === 'ollama_local' ? 'none' : 'block';
+
+            // Actualizar tutorial
+            const tutorialBox = document.getElementById('tutorial-box');
+            const tutorialTitle = tutorialBox.querySelector('h3');
+            document.getElementById('tutorial-content').innerHTML = TUTORIALS[provider] || '';
+            tutorialTitle.textContent = provider === 'ollama_local'
+                ? '📖 ¿Cómo instalar Ollama en tu PC?'
+                : '📖 ¿Cómo obtener tu API Key?';
         }
 
         // Cargar config guardada
