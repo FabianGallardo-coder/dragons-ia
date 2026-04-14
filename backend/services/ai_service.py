@@ -46,13 +46,18 @@ async def get_ai_response(
     if api_key:
         kwargs["api_key"] = api_key
 
-    # Detectar si es Ollama y configurar api_base
+    # Detectar proveedor y configurar api_base / auth
     if target_model.startswith("ollama/"):
+        raw_model = target_model.removeprefix("ollama/")
         if api_key:
-            # Ollama Cloud: usar endpoint remoto
-            kwargs["api_base"] = "https://api.ollama.com"
+            # Ollama Cloud: usar endpoint OpenAI-compatible de ollama.com
+            # LiteLLM's native Ollama handler no envía Authorization headers,
+            # así que usamos el prefijo openai/ para que LiteLLM use el handler
+            # de OpenAI que sí envía Bearer tokens.
+            kwargs["model"] = f"openai/{raw_model}"
+            kwargs["api_base"] = "https://ollama.com/v1"
         else:
-            # Ollama Local: usar endpoint local
+            # Ollama Local: usar endpoint local nativo
             kwargs["api_base"] = settings.ollama_api_base
     elif target_model.startswith("claude"):
         # Asegurar que Anthropic reciba la API key
