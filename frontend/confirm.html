@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Personaje — Dragons & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center font-serif">
+
+    <div class="w-full max-w-lg mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-amber-400 text-center mb-6">📜 Confirma tu Personaje</h1>
+
+        <div id="char-summary" class="bg-gray-800 border border-gray-700 rounded-xl p-6 space-y-3">
+            <div class="text-center">
+                <h2 id="sum-name" class="text-2xl font-bold text-amber-300"></h2>
+                <p id="sum-meta" class="text-gray-400 text-sm"></p>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <div class="grid grid-cols-2 gap-2 text-sm">
+                <div><span class="text-gray-400">Mundo:</span> <span id="sum-world" class="text-gray-200"></span></div>
+                <div><span class="text-gray-400">Raza:</span> <span id="sum-race" class="text-gray-200"></span></div>
+                <div><span class="text-gray-400">Clase:</span> <span id="sum-class" class="text-gray-200"></span></div>
+                <div><span class="text-gray-400">Género:</span> <span id="sum-gender" class="text-gray-200"></span></div>
+            </div>
+
+            <div class="text-sm">
+                <span class="text-gray-400">Objeto único:</span>
+                <span id="sum-object" class="text-amber-200 italic"></span>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                <div><span class="text-gray-400 block">FUE</span><span id="sum-fue" class="text-lg font-bold text-red-300"></span></div>
+                <div><span class="text-gray-400 block">DES</span><span id="sum-des" class="text-lg font-bold text-green-300"></span></div>
+                <div><span class="text-gray-400 block">CON</span><span id="sum-con" class="text-lg font-bold text-orange-300"></span></div>
+                <div><span class="text-gray-400 block">INT</span><span id="sum-int" class="text-lg font-bold text-blue-300"></span></div>
+                <div><span class="text-gray-400 block">SAB</span><span id="sum-sab" class="text-lg font-bold text-purple-300"></span></div>
+                <div><span class="text-gray-400 block">CAR</span><span id="sum-car" class="text-lg font-bold text-pink-300"></span></div>
+            </div>
+        </div>
+
+        <div id="error-msg" class="text-red-400 text-sm text-center mt-4 hidden"></div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="location.href='/character.html'"
+                class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition">
+                ← Editar
+            </button>
+            <button id="btn-start" onclick="startAdventure()"
+                class="flex-1 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg transition text-lg">
+                ⚔️ Iniciar Aventura
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        const WORLD_NAMES = {
+            fantasia: 'Fantasía Medieval',
+            ciencia_ficcion: 'Ciencia Ficción',
+            isekai: 'Isekai',
+            fantasia_oscura: 'Fantasía Oscura',
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            requireAuth();
+            const charData = JSON.parse(localStorage.getItem('dia_pending_character') || 'null');
+            if (!charData) {
+                location.href = '/character.html';
+                return;
+            }
+            document.getElementById('sum-name').textContent = charData.name;
+            document.getElementById('sum-meta').textContent =
+                `${charData.race} ${charData.character_class} — ${charData.gender}`;
+            document.getElementById('sum-world').textContent =
+                WORLD_NAMES[charData.world] || charData.world;
+            document.getElementById('sum-race').textContent = charData.race;
+            document.getElementById('sum-class').textContent = charData.character_class;
+            document.getElementById('sum-gender').textContent = charData.gender;
+            document.getElementById('sum-object').textContent = charData.unique_object;
+            document.getElementById('sum-fue').textContent = charData.stats.fuerza;
+            document.getElementById('sum-des').textContent = charData.stats.destreza;
+            document.getElementById('sum-con').textContent = charData.stats.constitucion;
+            document.getElementById('sum-int').textContent = charData.stats.inteligencia;
+            document.getElementById('sum-sab').textContent = charData.stats.sabiduria;
+            document.getElementById('sum-car').textContent = charData.stats.carisma;
+        });
+
+        async function startAdventure() {
+            const btn = document.getElementById('btn-start');
+            const errorDiv = document.getElementById('error-msg');
+            errorDiv.classList.add('hidden');
+            btn.disabled = true;
+            btn.textContent = '⏳ Creando personaje...';
+
+            try {
+                const charData = JSON.parse(localStorage.getItem('dia_pending_character'));
+
+                // 1) Crear el personaje en el backend
+                const character = await apiPost('/characters/', charData);
+
+                // 2) Obtener config de IA
+                const config = getGameConfig();
+
+                // 3) Iniciar nueva partida
+                btn.textContent = '⏳ La IA prepara tu aventura...';
+                const game = await apiPost('/game/new', {
+                    character_id: character.id,
+                    title: `Aventura de ${character.name}`,
+                    ai_model: config.model || null,
+                    api_key: config.apiKey || null,
+                });
+
+                // Guardar IDs activos
+                localStorage.setItem('dia_active_save', game.save_id);
+                localStorage.setItem('dia_active_character', character.id);
+                localStorage.removeItem('dia_pending_character');
+
+                location.href = '/game.html';
+            } catch (err) {
+                errorDiv.textContent = err.message || 'Error al iniciar la aventura';
+                errorDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = '⚔️ Iniciar Aventura';
+            }
+        }
+    </script>
+</body>
+</html>

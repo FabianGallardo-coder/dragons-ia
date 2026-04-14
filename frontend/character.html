@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Personaje — Dragons & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center font-serif">
+
+    <div class="w-full max-w-lg mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-amber-400 text-center mb-2">🧙 Crea tu Personaje</h1>
+        <p id="world-label" class="text-gray-400 text-center mb-6"></p>
+
+        <form id="character-form" class="space-y-4">
+            <!-- Nombre -->
+            <div>
+                <label class="block text-gray-300 mb-1">Nombre del personaje</label>
+                <input type="text" id="char-name" required minlength="2" maxlength="100"
+                    placeholder="Ej: Tharion Sombragris"
+                    class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-amber-500 focus:outline-none">
+            </div>
+
+            <!-- Raza -->
+            <div>
+                <label class="block text-gray-300 mb-1">Raza</label>
+                <select id="char-race"
+                    class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-amber-500 focus:outline-none">
+                    <option value="Humano">Humano</option>
+                    <option value="Elfo">Elfo</option>
+                    <option value="Enano">Enano</option>
+                    <option value="Mediano">Mediano</option>
+                    <option value="Tiefling">Tiefling</option>
+                    <option value="Dracónido">Dracónido</option>
+                    <option value="Semielfo">Semielfo</option>
+                    <option value="Semiorco">Semiorco</option>
+                    <option value="Gnomo">Gnomo</option>
+                </select>
+            </div>
+
+            <!-- Género -->
+            <div>
+                <label class="block text-gray-300 mb-1">Género</label>
+                <select id="char-gender"
+                    class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-amber-500 focus:outline-none">
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="No binario">No binario</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+
+            <!-- Clase -->
+            <div>
+                <label class="block text-gray-300 mb-1">Clase</label>
+                <select id="char-class"
+                    class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-amber-500 focus:outline-none">
+                    <option value="Guerrero">Guerrero</option>
+                    <option value="Mago">Mago</option>
+                    <option value="Pícaro">Pícaro</option>
+                    <option value="Clérigo">Clérigo</option>
+                    <option value="Druida">Druida</option>
+                    <option value="Bardo">Bardo</option>
+                    <option value="Paladín">Paladín</option>
+                    <option value="Ranger">Ranger</option>
+                    <option value="Monje">Monje</option>
+                    <option value="Hechicero">Hechicero</option>
+                    <option value="Brujo">Brujo</option>
+                    <option value="Bárbaro">Bárbaro</option>
+                </select>
+            </div>
+
+            <!-- Objeto Único -->
+            <div>
+                <label class="block text-gray-300 mb-1">Objeto único</label>
+                <input type="text" id="char-object" required minlength="2" maxlength="200"
+                    placeholder="Ej: Espada de trueno ancestral"
+                    class="w-full p-3 bg-gray-800 border border-gray-700 rounded-lg text-gray-100 focus:border-amber-500 focus:outline-none">
+                <p class="text-gray-500 text-xs mt-1">Un objeto especial que tu personaje porta.</p>
+            </div>
+
+            <!-- Stats -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="text-gray-300">Stats (D&D 5e)</label>
+                    <button type="button" id="btn-roll-stats"
+                        class="text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-amber-300">
+                        🎲 Tirar dados (4d6)
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-2" id="stats-grid">
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">FUE</label>
+                        <input type="number" id="stat-fuerza" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">DES</label>
+                        <input type="number" id="stat-destreza" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">CON</label>
+                        <input type="number" id="stat-constitucion" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">INT</label>
+                        <input type="number" id="stat-inteligencia" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">SAB</label>
+                        <input type="number" id="stat-sabiduria" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                    <div class="text-center">
+                        <label class="text-xs text-gray-400">CAR</label>
+                        <input type="number" id="stat-carisma" min="3" max="18" value="10"
+                            class="w-full p-2 bg-gray-800 border border-gray-700 rounded text-center text-gray-100">
+                    </div>
+                </div>
+            </div>
+
+            <div id="error-msg" class="text-red-400 text-sm hidden"></div>
+
+            <button type="submit"
+                class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-lg">
+                ✨ Revisar Personaje
+            </button>
+        </form>
+
+        <p class="text-center mt-4">
+            <a href="/world.html" class="text-gray-500 hover:text-gray-400 text-sm">← Cambiar mundo</a>
+        </p>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/character.js"></script>
+</body>
+</html>

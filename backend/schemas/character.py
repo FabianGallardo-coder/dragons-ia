@@ -1,0 +1,56 @@
+"""Schemas Pydantic para personajes."""
+
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+
+class CharacterStats(BaseModel):
+    """Stats del personaje estilo D&D."""
+    fuerza: int = Field(ge=1, le=20, default=10)
+    destreza: int = Field(ge=1, le=20, default=10)
+    constitucion: int = Field(ge=1, le=20, default=10)
+    inteligencia: int = Field(ge=1, le=20, default=10)
+    sabiduria: int = Field(ge=1, le=20, default=10)
+    carisma: int = Field(ge=1, le=20, default=10)
+
+
+class CharacterCreate(BaseModel):
+    """Schema para crear un personaje."""
+    name: str = Field(min_length=2, max_length=100)
+    world: str = Field(pattern=r"^(fantasia|ciencia_ficcion|isekai|fantasia_oscura)$")
+    race: str = Field(min_length=2, max_length=50)
+    gender: str = Field(min_length=1, max_length=30)
+    character_class: str = Field(min_length=2, max_length=50)
+    unique_object: str = Field(min_length=2, max_length=200)
+    stats: CharacterStats
+
+
+class CharacterResponse(BaseModel):
+    """Schema de respuesta de personaje."""
+    id: str
+    user_id: str
+    name: str
+    world: str
+    race: str
+    gender: str
+    character_class: str
+    unique_object: str
+    stats: CharacterStats
+    hp_max: int
+    hp_current: int
+    level: int
+    experience: int
+    is_alive: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CharacterUpdate(BaseModel):
+    """Schema para actualizar stats del personaje (internamente)."""
+    hp_current: Optional[int] = None
+    level: Optional[int] = None
+    experience: Optional[int] = None
+    is_alive: Optional[bool] = None

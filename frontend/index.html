@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragons & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col items-center justify-center font-serif">
+
+    <div id="app" class="w-full max-w-lg mx-auto px-4 text-center">
+        <!-- Logo / Título -->
+        <h1 class="text-5xl font-bold text-amber-400 mb-2 tracking-wider drop-shadow-lg">
+            ⚔️ Dragons & IA
+        </h1>
+        <p class="text-gray-400 mb-10 text-lg italic">
+            Tu aventura comienza aquí. La IA será tu Dungeon Master.
+        </p>
+
+        <!-- Botones para usuario NO autenticado -->
+        <div id="guest-menu" class="space-y-4 hidden">
+            <button onclick="location.href='/login.html'"
+                class="w-full py-3 px-6 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-lg">
+                Iniciar Sesión
+            </button>
+            <button onclick="location.href='/register.html'"
+                class="w-full py-3 px-6 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition text-lg">
+                Registrarse
+            </button>
+        </div>
+
+        <!-- Botones para usuario autenticado -->
+        <div id="user-menu" class="space-y-4 hidden">
+            <p id="welcome-msg" class="text-amber-300 text-xl mb-4"></p>
+
+            <button id="btn-resume" onclick="location.href='/game.html'"
+                class="w-full py-3 px-6 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg transition text-lg hidden">
+                🎮 Reanudar Partida
+            </button>
+
+            <button onclick="location.href='/config.html'"
+                class="w-full py-3 px-6 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-lg">
+                ⚙️ Configuración de IA
+            </button>
+
+            <button onclick="location.href='/world.html'"
+                class="w-full py-3 px-6 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded-lg transition text-lg">
+                🌍 Nueva Aventura
+            </button>
+
+            <button id="btn-logout" onclick="logout()"
+                class="w-full py-3 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg transition text-lg">
+                Cerrar Sesión
+            </button>
+        </div>
+
+        <!-- Donaciones -->
+        <div id="donate-section" class="mt-10 border-t border-gray-800 pt-6">
+            <p class="text-gray-500 text-sm mb-3">Apoyá el proyecto</p>
+            <div class="flex gap-3 justify-center">
+                <a id="btn-paypal" href="#" target="_blank"
+                    class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm transition hidden">
+                    PayPal
+                </a>
+                <a id="btn-mercadopago" href="#" target="_blank"
+                    class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm transition hidden">
+                    MercadoPago
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="absolute bottom-4 text-gray-600 text-sm">
+        Open Source | v0.1 Beta — Dragons & IA
+    </footer>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getUser();
+            if (user) {
+                document.getElementById('guest-menu').classList.add('hidden');
+                document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('welcome-msg').textContent =
+                    `Bienvenido, ${user.username}`;
+
+                // Verificar si hay partidas activas
+                try {
+                    const saves = await apiGet('/game/saves');
+                    const active = saves.find(s => s.is_active);
+                    if (active) {
+                        localStorage.setItem('dia_active_save', active.id);
+                        document.getElementById('btn-resume').classList.remove('hidden');
+                    }
+                } catch (e) {
+                    // Sin partidas, no mostrar botón
+                }
+            } else {
+                document.getElementById('guest-menu').classList.remove('hidden');
+                document.getElementById('user-menu').classList.add('hidden');
+            }
+
+            // Cargar links de donación
+            try {
+                const donations = await apiGet('/donations/info');
+                if (donations.paypal_url) {
+                    const btn = document.getElementById('btn-paypal');
+                    btn.href = donations.paypal_url;
+                    btn.classList.remove('hidden');
+                }
+                if (donations.mercadopago_url) {
+                    const btn = document.getElementById('btn-mercadopago');
+                    btn.href = donations.mercadopago_url;
+                    btn.classList.remove('hidden');
+                }
+            } catch (e) {
+                // No mostrar donaciones si falla
+            }
+        });
+    </script>
+</body>
+</html>

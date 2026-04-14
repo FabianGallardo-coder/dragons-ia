@@ -1,0 +1,41 @@
+# Entorno virtual
+venv/
+.venv/
+env/
+
+# Variables de entorno
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Base de datos local
+*.db
+*.sqlite3
+
+# Alembic
+alembic/versions/__pycache__/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+.dockerignore

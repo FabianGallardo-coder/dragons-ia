@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elige tu Mundo — Dragons & IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center font-serif">
+
+    <div class="w-full max-w-2xl mx-auto px-4">
+        <h1 class="text-3xl font-bold text-amber-400 text-center mb-2">🌍 Elige tu Mundo</h1>
+        <p class="text-gray-400 text-center mb-8">¿En qué universo vivirás tu aventura?</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Fantasía -->
+            <button onclick="selectWorld('fantasia')"
+                class="world-card p-6 bg-gray-800 border-2 border-gray-700 hover:border-amber-500 rounded-xl transition text-left group">
+                <div class="text-3xl mb-2">🏰</div>
+                <h2 class="text-xl font-bold text-amber-300 group-hover:text-amber-400">Fantasía Medieval</h2>
+                <p class="text-gray-400 text-sm mt-1">
+                    Reinos, dragones, magia arcana y criaturas míticas. El mundo clásico de D&D.
+                </p>
+            </button>
+
+            <!-- Ciencia Ficción -->
+            <button onclick="selectWorld('ciencia_ficcion')"
+                class="world-card p-6 bg-gray-800 border-2 border-gray-700 hover:border-cyan-500 rounded-xl transition text-left group">
+                <div class="text-3xl mb-2">🚀</div>
+                <h2 class="text-xl font-bold text-cyan-300 group-hover:text-cyan-400">Ciencia Ficción</h2>
+                <p class="text-gray-400 text-sm mt-1">
+                    Naves espaciales, IAs rebeldes, megacorporaciones y dilemas éticos del futuro.
+                </p>
+            </button>
+
+            <!-- Isekai -->
+            <button onclick="selectWorld('isekai')"
+                class="world-card p-6 bg-gray-800 border-2 border-gray-700 hover:border-purple-500 rounded-xl transition text-left group">
+                <div class="text-3xl mb-2">🌀</div>
+                <h2 class="text-xl font-bold text-purple-300 group-hover:text-purple-400">Isekai</h2>
+                <p class="text-gray-400 text-sm mt-1">
+                    Transportado a otro mundo. Tus conocimientos modernos en un mundo de fantasía.
+                </p>
+            </button>
+
+            <!-- Fantasía Oscura -->
+            <button onclick="selectWorld('fantasia_oscura')"
+                class="world-card p-6 bg-gray-800 border-2 border-gray-700 hover:border-red-500 rounded-xl transition text-left group">
+                <div class="text-3xl mb-2">💀</div>
+                <h2 class="text-xl font-bold text-red-300 group-hover:text-red-400">Fantasía Oscura</h2>
+                <p class="text-gray-400 text-sm mt-1">
+                    Horror, muerte, corrupción. La oscuridad acecha y la esperanza es un lujo.
+                </p>
+            </button>
+        </div>
+
+        <p class="text-center mt-6">
+            <a href="/" class="text-gray-500 hover:text-gray-400 text-sm">← Volver al inicio</a>
+        </p>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => requireAuth());
+
+        function selectWorld(world) {
+            localStorage.setItem('dia_selected_world', world);
+            location.href = '/character.html';
+        }
+    </script>
+</body>
+</html>

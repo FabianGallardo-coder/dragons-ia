@@ -1,0 +1,293 @@
+"""
+Router del juego — Acciones del jugador, nueva partida, guardar/cargar.
+"""
+
+import json
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.config import get_settings
+from backend.database import get_db
+from backend.models.character import Character
+from backend.models.save import SaveGame
+from backend.models.user import User
+from backend.routers.auth import get_current_user
+from backend.schemas.game import (
+    GameAction,
+    GameNewRequest,
+    GameResponse,
+    HistoryEntry,
+    SaveGameDetail,
+    SaveGameResponse,
+)
+from backend.services.ai_service import get_ai_response
+from backend.services.dungeon_master import build_system_prompt
+
+router = APIRouter()
+settings = get_settings()
+
+
+def _parse_history(history_str: str) -> list[dict]:
+    """Parsea el historial JSON de la partida."""
+    try:
+        return json.loads(history_str) if history_str else []
+    except json.JSONDecodeError:
+        return []
+
+
+def _serialize_history(history: list[dict]) -> str:
+    """Serializa el historial a JSON string."""
+    return json.dumps(history, ensure_ascii=False)
+
+
+def _char_to_dict(char: Character) -> dict:
+    """Convierte Character ORM a dict para el prompt."""
+    stats = json.loads(char.stats) if isinstance(char.stats, str) else char.stats
+    return {
+        "name": char.name,
+        "race": char.race,
+        "character_class": char.character_class,
+        "unique_object": char.unique_object,
+        "stats": stats,
+        "hp_current": char.hp_current,
+        "hp_max": char.hp_max,
+        "level": char.level,
+    }
+
+
+@router.post("/new", response_model=GameResponse)
+async def new_game(
+    data: GameNewRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Inicia una nueva partida: crea el save y genera la escena de apertura."""
+    # Buscar el personaje
+    result = await db.execute(
+        select(Character).where(
+            Character.id == data.character_id, Character.user_id == current_user.id
+        )
+    )
+    character = result.scalar_one_or_none()
+    if not character:
+        raise HTTPException(status_code=404, detail="Personaje no encontrado.")
+
+    if not character.is_alive:
+        raise HTTPException(status_code=400, detail="Este personaje ha muerto. Crea uno nuevo.")
+
+    # Construir el system prompt
+    char_dict = _char_to_dict(character)
+    system_prompt = build_system_prompt(char_dict, character.world)
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Llamar a la IA para la escena de apertura
+    try:
+        narrative = await get_ai_response(
+            messages, model=data.ai_model, api_key=data.api_key
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    # Crear historial inicial
+    now = datetime.now(timezone.utc).isoformat()
+    history = [
+        {"role": "system", "content": system_prompt, "timestamp": now, "dice_roll": None},
+        {"role": "assistant", "content": narrative, "timestamp": now, "dice_roll": None},
+    ]
+
+    # Crear save game
+    save = SaveGame(
+        user_id=current_user.id,
+        character_id=character.id,
+        title=data.title,
+        history=_serialize_history(history),
+        turn_count=1,
+    )
+    db.add(save)
+    await db.flush()
+    await db.refresh(save)
+
+    return GameResponse(
+        narrative=narrative,
+        save_id=save.id,
+        turn_count=save.turn_count,
+        character_hp=character.hp_current,
+        character_hp_max=character.hp_max,
+        character_alive=character.is_alive,
+    )
+
+
+@router.post("/action", response_model=GameResponse)
+async def game_action(
+    data: GameAction,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Procesa una acción del jugador y genera la respuesta del DM."""
+    # Buscar save game
+    result = await db.execute(
+        select(SaveGame).where(
+            SaveGame.id == data.save_id, SaveGame.user_id == current_user.id
+        )
+    )
+    save = result.scalar_one_or_none()
+    if not save:
+        raise HTTPException(status_code=404, detail="Partida no encontrada.")
+
+    if not save.is_active:
+        raise HTTPException(status_code=400, detail="Esta partida ha terminado.")
+
+    # Buscar personaje
+    result = await db.execute(select(Character).where(Character.id == save.character_id))
+    character = result.scalar_one_or_none()
+    if not character:
+        raise HTTPException(status_code=404, detail="Personaje no encontrado.")
+
+    # Reconstruir mensajes para la IA (solo system + últimos turnos)
+    history = _parse_history(save.history)
+
+    # Preparar el mensaje del jugador
+    now = datetime.now(timezone.utc).isoformat()
+    user_content = data.action
+    if data.dice_result is not None:
+        user_content += f"\n[Resultado del dado: {data.dice_result}]"
+
+    history.append({
+        "role": "user",
+        "content": user_content,
+        "timestamp": now,
+        "dice_roll": data.dice_result,
+    })
+
+    # Construir mensajes para la IA (limitar contexto a últimos 20 turnos + system)
+    ai_messages = []
+    system_msgs = [h for h in history if h["role"] == "system"]
+    if system_msgs:
+        ai_messages.append({"role": "system", "content": system_msgs[-1]["content"]})
+
+    conversation = [h for h in history if h["role"] != "system"]
+    # Mantener los últimos 20 mensajes de conversación
+    for msg in conversation[-20:]:
+        ai_messages.append({"role": msg["role"], "content": msg["content"]})
+
+    # Llamar a la IA
+    try:
+        narrative = await get_ai_response(
+            ai_messages, model=data.ai_model, api_key=data.api_key
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    # Agregar respuesta al historial
+    history.append({
+        "role": "assistant",
+        "content": narrative,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "dice_roll": None,
+    })
+
+    # Actualizar save game
+    save.history = _serialize_history(history)
+    save.turn_count += 1
+    save.updated_at = datetime.now(timezone.utc)
+
+    return GameResponse(
+        narrative=narrative,
+        save_id=save.id,
+        turn_count=save.turn_count,
+        character_hp=character.hp_current,
+        character_hp_max=character.hp_max,
+        character_alive=character.is_alive,
+    )
+
+
+@router.get("/saves", response_model=list[SaveGameResponse])
+async def list_saves(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista todas las partidas del usuario."""
+    result = await db.execute(
+        select(SaveGame)
+        .where(SaveGame.user_id == current_user.id)
+        .order_by(SaveGame.updated_at.desc())
+    )
+    saves = result.scalars().all()
+    return [SaveGameResponse.model_validate(s) for s in saves]
+
+
+@router.get("/saves/{save_id}", response_model=SaveGameDetail)
+async def get_save(
+    save_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Obtiene una partida con su historial completo."""
+    result = await db.execute(
+        select(SaveGame).where(
+            SaveGame.id == save_id, SaveGame.user_id == current_user.id
+        )
+    )
+    save = result.scalar_one_or_none()
+    if not save:
+        raise HTTPException(status_code=404, detail="Partida no encontrada.")
+
+    history = _parse_history(save.history)
+    # Filtrar mensajes de sistema del historial visible
+    visible_history = [
+        HistoryEntry(**h) for h in history if h["role"] != "system"
+    ]
+
+    return SaveGameDetail(
+        id=save.id,
+        user_id=save.user_id,
+        character_id=save.character_id,
+        title=save.title,
+        turn_count=save.turn_count,
+        is_active=save.is_active,
+        created_at=save.created_at,
+        updated_at=save.updated_at,
+        history=visible_history,
+    )
+
+
+@router.post("/saves/{save_id}/save", response_model=SaveGameResponse)
+async def manual_save(
+    save_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Marca explícitamente una partida como guardada (actualiza timestamp)."""
+    result = await db.execute(
+        select(SaveGame).where(
+            SaveGame.id == save_id, SaveGame.user_id == current_user.id
+        )
+    )
+    save = result.scalar_one_or_none()
+    if not save:
+        raise HTTPException(status_code=404, detail="Partida no encontrada.")
+
+    save.updated_at = datetime.now(timezone.utc)
+    return SaveGameResponse.model_validate(save)
+
+
+@router.delete("/saves/{save_id}", status_code=204)
+async def delete_save(
+    save_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Elimina una partida guardada."""
+    result = await db.execute(
+        select(SaveGame).where(
+            SaveGame.id == save_id, SaveGame.user_id == current_user.id
+        )
+    )
+    save = result.scalar_one_or_none()
+    if not save:
+        raise HTTPException(status_code=404, detail="Partida no encontrada.")
+    await db.delete(save)

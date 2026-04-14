@@ -1,0 +1,100 @@
+/* ══════════════════════════════════════════════
+   Dragons & IA — Estilos globales
+   ══════════════════════════════════════════════ */
+
+/* Fuente para el toque medieval */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+    --color-gold: #F59E0B;
+    --color-gold-light: #FBBF24;
+    --color-dark: #030712;
+    --color-dark-card: #111827;
+    --color-border: #374151;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3 {
+    font-family: 'Cinzel', serif;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #111827;
+}
+::-webkit-scrollbar-thumb {
+    background: #374151;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #4B5563;
+}
+
+/* Animación de carga */
+@keyframes pulse-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+#loading-indicator {
+    animation: pulse-glow 1.5s infinite;
+}
+
+/* Mensajes del juego */
+.message-dm {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-left: 3px solid var(--color-gold);
+    padding: 1rem 1.25rem;
+    border-radius: 0 0.75rem 0.75rem 0;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.message-player {
+    background: #1f2937;
+    border-left: 3px solid #10B981;
+    padding: 0.75rem 1rem;
+    border-radius: 0 0.75rem 0.75rem 0;
+    color: #D1D5DB;
+}
+
+.message-dice {
+    text-align: center;
+    color: var(--color-gold);
+    font-weight: bold;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Dados hover */
+.dice-btn {
+    transition: transform 0.15s, background-color 0.2s;
+}
+.dice-btn:hover {
+    transform: scale(1.1);
+}
+.dice-btn:active {
+    transform: scale(0.95);
+}
+
+/* Tarjetas de mundo */
+.world-card {
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+}
+.world-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Input focus */
+input:focus, select:focus, textarea:focus {
+    ring: none;
+    outline: none;
+    border-color: var(--color-gold) !important;
+}
