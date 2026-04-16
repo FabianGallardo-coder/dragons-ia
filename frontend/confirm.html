@@ -107,13 +107,15 @@
 
                 // 2) Obtener config de IA
                 const config = getGameConfig();
+                const aiModel = config.model && (config.model.includes('/') || config.model.startsWith('claude'))
+                    ? config.model : null;
 
                 // 3) Iniciar nueva partida
                 btn.textContent = '⏳ La IA prepara tu aventura...';
                 const game = await apiPost('/game/new', {
                     character_id: character.id,
                     title: `Aventura de ${character.name}`,
-                    ai_model: config.model || null,
+                    ai_model: aiModel,
                     api_key: config.apiKey || null,
                 });
 

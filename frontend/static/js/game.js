@@ -69,11 +69,14 @@ async function handleAction(e) {
 
     try {
         const config = getGameConfig();
+        // Validar que el modelo sea un ID real (contiene / o empieza con claude)
+        const model = config.model && (config.model.includes('/') || config.model.startsWith('claude'))
+            ? config.model : null;
         const response = await apiPost('/game/action', {
             save_id: saveId,
             action: action,
             dice_result: currentDiceResult,
-            ai_model: config.model || null,
+            ai_model: model,
             api_key: config.apiKey || null,
         });
 

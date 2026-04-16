@@ -40,6 +40,12 @@ async def get_ai_response(
     """
     target_model = model or settings.default_ai_model
 
+    # Validar que el modelo tenga un formato reconocido (previene basura de frontend)
+    valid_prefixes = ("ollama/", "claude", "anthropic/", "openai/", "gpt-")
+    if not any(target_model.startswith(p) for p in valid_prefixes):
+        logger.warning("Modelo inválido recibido: %r, usando default", target_model)
+        target_model = settings.default_ai_model
+
     # Construir kwargs
     kwargs: dict = {"model": target_model, "messages": messages, "max_tokens": 2048}
 
