@@ -157,6 +157,7 @@ async def new_game(
         character_hp=character.hp_current,
         character_hp_max=character.hp_max,
         character_alive=character.is_alive,
+        character_xp=character.experience,
     )
 
 
@@ -251,6 +252,7 @@ async def game_action(
         character_hp=character.hp_current,
         character_hp_max=character.hp_max,
         character_alive=character.is_alive,
+        character_xp=character.experience,
     )
 
 

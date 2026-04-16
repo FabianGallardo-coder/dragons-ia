@@ -34,11 +34,6 @@
         <div id="user-menu" class="space-y-4 hidden">
             <p id="welcome-msg" class="text-amber-300 text-xl mb-4"></p>
 
-            <button id="btn-resume" onclick="location.href='/game.html'"
-                class="w-full py-3 px-6 bg-emerald-700 hover:bg-emerald-600 text-white font-bold rounded-lg transition text-lg hidden">
-                🎮 Reanudar Partida
-            </button>
-
             <button onclick="location.href='/config.html'"
                 class="w-full py-3 px-6 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-lg">
                 ⚙️ Configuración de IA
@@ -48,6 +43,12 @@
                 class="w-full py-3 px-6 bg-indigo-700 hover:bg-indigo-600 text-white font-bold rounded-lg transition text-lg">
                 🌍 Nueva Aventura
             </button>
+
+            <!-- Lista de partidas guardadas -->
+            <div id="saves-section" class="hidden mt-4">
+                <h3 class="text-gray-400 text-sm mb-2 text-left">📜 Tus partidas</h3>
+                <div id="saves-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
 
             <button id="btn-logout" onclick="logout()"
                 class="w-full py-3 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg transition text-lg">
@@ -86,16 +87,39 @@
                 document.getElementById('welcome-msg').textContent =
                     `Bienvenido, ${user.username}`;
 
-                // Verificar si hay partidas activas
+                // Cargar lista de partidas
                 try {
                     const saves = await apiGet('/game/saves');
-                    const active = saves.find(s => s.is_active);
-                    if (active) {
-                        localStorage.setItem('dia_active_save', active.id);
-                        document.getElementById('btn-resume').classList.remove('hidden');
+                    if (saves.length > 0) {
+                        const section = document.getElementById('saves-section');
+                        section.classList.remove('hidden');
+                        const list = document.getElementById('saves-list');
+
+                        saves.forEach(save => {
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-3 hover:border-gray-700 transition';
+
+                            const status = save.is_active
+                                ? '<span class="text-emerald-400 text-xs">● Activa</span>'
+                                : '<span class="text-gray-600 text-xs">● Terminada</span>';
+
+                            const date = new Date(save.updated_at).toLocaleDateString('es-AR', {
+                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                            });
+
+                            div.innerHTML = `
+                                <div class="text-left flex-1">
+                                    <p class="text-gray-200 text-sm font-medium">${save.title}</p>
+                                    <p class="text-gray-500 text-xs">Turno ${save.turn_count} — ${date} ${status}</p>
+                                </div>
+                                ${save.is_active ? `<button onclick="resumeSave('${save.id}')" class="bg-emerald-700 hover:bg-emerald-600 px-3 py-1 rounded text-sm text-white ml-2">▶ Jugar</button>` : ''}
+                                <button onclick="deleteSave('${save.id}', this)" class="bg-gray-700 hover:bg-red-800 px-2 py-1 rounded text-xs text-gray-400 hover:text-white ml-1" title="Eliminar">🗑️</button>
+                            `;
+                            list.appendChild(div);
+                        });
                     }
                 } catch (e) {
-                    // Sin partidas, no mostrar botón
+                    // Sin partidas, no mostrar
                 }
             } else {
                 document.getElementById('guest-menu').classList.remove('hidden');
@@ -119,6 +143,26 @@
                 // No mostrar donaciones si falla
             }
         });
+
+        function resumeSave(saveId) {
+            localStorage.setItem('dia_active_save', saveId);
+            location.href = '/game.html';
+        }
+
+        async function deleteSave(saveId, btn) {
+            if (!confirm('¿Eliminar esta partida? No se puede deshacer.')) return;
+            try {
+                await apiDelete(`/game/saves/${saveId}`);
+                btn.closest('div.flex').remove();
+                // Si no quedan partidas, ocultar la sección
+                const list = document.getElementById('saves-list');
+                if (list && list.children.length === 0) {
+                    document.getElementById('saves-section').classList.add('hidden');
+                }
+            } catch (e) {
+                alert('Error al eliminar: ' + e.message);
+            }
+        }
     </script>
 </body>
 </html>

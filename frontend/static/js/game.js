@@ -85,6 +85,7 @@ async function handleAction(e) {
 
         // Actualizar UI
         updateHP(response.character_hp, response.character_hp_max);
+        updateXP(response.character_xp || 0);
         document.getElementById('turn-display').textContent = `Turno ${response.turn_count}`;
 
         // Verificar muerte del personaje
@@ -125,9 +126,12 @@ function rollDice(sides) {
     _enableDiceButtons(false);
     document.getElementById('dice-used-msg').classList.remove('hidden');
 
-    // Animación breve
-    display.classList.add('scale-125');
-    setTimeout(() => display.classList.remove('scale-125'), 200);
+    // Animación de dado
+    display.classList.add('dice-rolling');
+    setTimeout(() => display.classList.remove('dice-rolling'), 400);
+
+    // Toast notification
+    showToast(`🎲 Tiraste d${sides}: ${result}`, 'amber');
 }
 
 /**
@@ -201,18 +205,64 @@ function addSystemMessage(text) {
 }
 
 /**
- * Actualiza la barra de HP.
+ * Actualiza la barra de HP con visual.
  */
 function updateHP(current, max) {
     const display = document.getElementById('hp-display');
     display.textContent = `❤️ ${current}/${max}`;
-    if (current <= max * 0.25) {
-        display.className = 'text-red-400 font-bold';
-    } else if (current <= max * 0.5) {
-        display.className = 'text-yellow-400 font-bold';
-    } else {
-        display.className = 'text-emerald-400 font-bold';
+
+    const percent = max > 0 ? (current / max) * 100 : 0;
+    const bar = document.getElementById('hp-bar');
+    if (bar) {
+        bar.style.width = `${percent}%`;
+        if (percent <= 25) {
+            bar.className = 'hp-bar-fill bg-red-500';
+            display.className = 'text-red-400 font-bold text-xs';
+        } else if (percent <= 50) {
+            bar.className = 'hp-bar-fill bg-yellow-500';
+            display.className = 'text-yellow-400 font-bold text-xs';
+        } else {
+            bar.className = 'hp-bar-fill bg-emerald-500';
+            display.className = 'text-emerald-400 font-bold text-xs';
+        }
     }
+}
+
+/**
+ * Actualiza la barra de XP.
+ */
+function updateXP(xp) {
+    const display = document.getElementById('xp-display');
+    if (!display) return;
+    // XP para subir de nivel: nivel * 100 (simplificado)
+    const level = Math.floor(xp / 100) + 1;
+    const xpInLevel = xp % 100;
+    display.textContent = `⭐ Nv.${level} — XP ${xpInLevel}/100`;
+
+    const bar = document.getElementById('xp-bar');
+    if (bar) {
+        bar.style.width = `${xpInLevel}%`;
+    }
+}
+
+/**
+ * Muestra una notificación toast temporal.
+ */
+function showToast(message, color = 'gray') {
+    const colors = {
+        amber: 'bg-amber-800 text-amber-100 border border-amber-600',
+        red: 'bg-red-900 text-red-100 border border-red-600',
+        green: 'bg-emerald-900 text-emerald-100 border border-emerald-600',
+        gray: 'bg-gray-800 text-gray-100 border border-gray-600',
+    };
+    const toast = document.createElement('div');
+    toast.className = `toast ${colors[color] || colors.gray}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-hide');
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
 }
 
 /**

@@ -41,6 +41,7 @@ class GameResponse(BaseModel):
     character_hp: int
     character_hp_max: int
     character_alive: bool
+    character_xp: int = 0
 
 
 class SaveGameResponse(BaseModel):

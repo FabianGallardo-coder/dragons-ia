@@ -82,6 +82,82 @@ h1, h2, h3 {
 .dice-btn:active {
     transform: scale(0.95);
 }
+.dice-btn:disabled {
+    pointer-events: none;
+}
+
+/* Animación de tirada de dado */
+@keyframes dice-roll {
+    0% { transform: rotate(0deg) scale(1); }
+    25% { transform: rotate(15deg) scale(1.3); }
+    50% { transform: rotate(-10deg) scale(1.2); }
+    75% { transform: rotate(5deg) scale(1.1); }
+    100% { transform: rotate(0deg) scale(1); }
+}
+.dice-rolling {
+    animation: dice-roll 0.4s ease-out;
+}
+
+/* Entrada suave de mensajes */
+@keyframes message-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.message-dm, .message-player, .message-dice {
+    animation: message-in 0.3s ease-out;
+}
+
+/* Barra de XP */
+.xp-bar-bg {
+    background: #1f2937;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 6px;
+}
+.xp-bar-fill {
+    background: linear-gradient(90deg, #8B5CF6, #A78BFA);
+    height: 100%;
+    transition: width 0.5s ease-out;
+    border-radius: 4px;
+}
+
+/* Barra de HP */
+.hp-bar-bg {
+    background: #1f2937;
+    border-radius: 4px;
+    overflow: hidden;
+    height: 8px;
+    min-width: 80px;
+}
+.hp-bar-fill {
+    height: 100%;
+    transition: width 0.5s ease-out, background-color 0.3s;
+    border-radius: 4px;
+}
+
+/* Toast de notificaciones */
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+}
+.toast {
+    animation: toast-in 0.3s ease-out;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.toast.toast-hide {
+    animation: toast-out 0.3s ease-in forwards;
+}
 
 /* Tarjetas de mundo */
 .world-card {
