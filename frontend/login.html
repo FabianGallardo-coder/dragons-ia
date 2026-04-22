@@ -25,6 +25,9 @@
             </div>
 
             <div id="error-msg" class="text-red-400 text-sm hidden"></div>
+            <div id="expired-msg" class="text-amber-400 text-sm hidden bg-amber-950 border border-amber-800 rounded p-3">
+                ⏰ Tu sesión expiró. Iniciá sesión nuevamente.
+            </div>
 
             <button type="submit"
                 class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition text-lg">
@@ -45,6 +48,11 @@
     <script src="/static/js/api.js"></script>
     <script src="/static/js/auth.js"></script>
     <script>
+        // Mostrar aviso si vino de una sesión expirada
+        if (new URLSearchParams(location.search).get('expired')) {
+            document.getElementById('expired-msg').classList.remove('hidden');
+        }
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const errorDiv = document.getElementById('error-msg');

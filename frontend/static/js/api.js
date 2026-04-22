@@ -30,6 +30,23 @@ async function _fetchWithRetry(url, options, retries = 2) {
 }
 
 /**
+ * Limpia la sesión y redirige al login.
+ * Se llama automáticamente cuando el servidor devuelve 401.
+ */
+function _handleUnauthorized() {
+    localStorage.removeItem('dia_token');
+    localStorage.removeItem('dia_user');
+    localStorage.removeItem('dia_active_save');
+    localStorage.removeItem('dia_active_character');
+    localStorage.removeItem('dia_pending_character');
+    // Solo redirigir si no estamos ya en login/register
+    const path = location.pathname;
+    if (!path.includes('login') && !path.includes('register')) {
+        location.href = '/login.html?expired=1';
+    }
+}
+
+/**
  * Realiza un GET autenticado.
  */
 async function apiGet(path) {
@@ -39,6 +56,10 @@ async function apiGet(path) {
         headers['Authorization'] = `Bearer ${token}`;
     }
     const res = await _fetchWithRetry(`${API_BASE}${path}`, { headers });
+    if (res.status === 401) {
+        _handleUnauthorized();
+        throw new Error('Sesión expirada. Por favor iniciá sesión nuevamente.');
+    }
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Error de conexión' }));
         throw new Error(err.detail || `Error ${res.status}`);
@@ -60,6 +81,10 @@ async function apiPost(path, body) {
         headers,
         body: JSON.stringify(body),
     });
+    if (res.status === 401) {
+        _handleUnauthorized();
+        throw new Error('Sesión expirada. Por favor iniciá sesión nuevamente.');
+    }
     if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: 'Error de conexión' }));
         throw new Error(err.detail || `Error ${res.status}`);
@@ -80,6 +105,10 @@ async function apiDelete(path) {
         method: 'DELETE',
         headers,
     });
+    if (res.status === 401) {
+        _handleUnauthorized();
+        throw new Error('Sesión expirada. Por favor iniciá sesión nuevamente.');
+    }
     if (!res.ok && res.status !== 204) {
         const err = await res.json().catch(() => ({ detail: 'Error de conexión' }));
         throw new Error(err.detail || `Error ${res.status}`);

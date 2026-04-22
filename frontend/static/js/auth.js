@@ -1,6 +1,6 @@
 /**
- * Dragons & IA — auth.js
- * Manejo de autenticación JWT en localStorage.
+ * Dragons & IA - auth.js
+ * Manejo de autenticacion JWT en localStorage.
  */
 
 /**
@@ -25,14 +25,30 @@ function getUser() {
 }
 
 /**
- * Obtiene el token JWT.
+ * Obtiene el token JWT solo si no esta expirado.
+ * Verifica localmente el campo `exp` del payload sin llamar al servidor.
  */
 function getToken() {
-    return localStorage.getItem('dia_token');
+    const token = localStorage.getItem('dia_token');
+    if (!token) return null;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // exp esta en segundos UTC
+        if (payload.exp && Date.now() / 1000 > payload.exp) {
+            localStorage.removeItem('dia_token');
+            localStorage.removeItem('dia_user');
+            localStorage.removeItem('dia_active_save');
+            return null;
+        }
+    } catch {
+        localStorage.removeItem('dia_token');
+        return null;
+    }
+    return token;
 }
 
 /**
- * Cierra sesión y limpia localStorage.
+ * Cierra sesion y limpia localStorage.
  */
 function logout() {
     localStorage.removeItem('dia_token');
@@ -44,23 +60,23 @@ function logout() {
 }
 
 /**
- * Redirige al login si no hay sesión activa.
+ * Redirige al login si no hay sesion activa o el token expiro.
  */
 function requireAuth() {
     if (!getToken()) {
-        location.href = '/login.html';
+        location.href = '/login.html?expired=1';
     }
 }
 
 /**
- * Guarda la configuración de IA del jugador en localStorage.
+ * Guarda la configuracion de IA del jugador en localStorage.
  */
 function saveGameConfig(config) {
     localStorage.setItem('dia_game_config', JSON.stringify(config));
 }
 
 /**
- * Obtiene la configuración de IA guardada.
+ * Obtiene la configuracion de IA guardada.
  */
 function getGameConfig() {
     const raw = localStorage.getItem('dia_game_config');
