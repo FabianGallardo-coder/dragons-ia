@@ -54,6 +54,8 @@ class SaveGameResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    character_name: str | None = None
+    character_world: str | None = None
 
     model_config = {"from_attributes": True}
 

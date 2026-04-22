@@ -52,8 +52,24 @@ h1, h2, h3 {
     border-left: 3px solid var(--color-gold);
     padding: 1rem 1.25rem;
     border-radius: 0 0.75rem 0.75rem 0;
-    line-height: 1.7;
-    white-space: pre-wrap;
+}
+
+.message-dm-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--color-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.6rem;
+    opacity: 0.75;
+}
+
+.message-dm-body p {
+    line-height: 1.8;
+    margin-bottom: 0.65rem;
+}
+.message-dm-body p:last-child {
+    margin-bottom: 0;
 }
 
 .message-player {
@@ -96,6 +112,15 @@ h1, h2, h3 {
 }
 .dice-rolling {
     animation: dice-roll 0.4s ease-out;
+}
+
+/* Dado crítico — destello dorado */
+@keyframes critical-glow {
+    0%, 100% { text-shadow: 0 0 6px #FDE047; }
+    50%       { text-shadow: 0 0 18px #FDE047, 0 0 36px #F59E0B; }
+}
+.dice-critical {
+    animation: dice-roll 0.4s ease-out, critical-glow 1.2s ease-in-out 0.4s 3;
 }
 
 /* Entrada suave de mensajes */

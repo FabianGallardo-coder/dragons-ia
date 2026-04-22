@@ -74,7 +74,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Renderizar historial
         renderHistory(save.history);
         scrollToBottom();
+        setAIStatus('ok');
     } catch (err) {
+        setAIStatus('error');
         addSystemMessage('Error al cargar la partida: ' + err.message);
     }
 
@@ -100,6 +102,7 @@ async function handleAction(e) {
     isProcessing = true;
     input.value = '';
     showLoading(true);
+    setAIStatus('thinking');
 
     // Mostrar mensaje del jugador
     addPlayerMessage(action, currentDiceResult);
@@ -125,6 +128,8 @@ async function handleAction(e) {
         updateXP(response.character_xp || 0);
         document.getElementById('turn-display').textContent = `Turno ${response.turn_count}`;
 
+        setAIStatus('ok');
+
         // Verificar muerte del personaje
         if (!response.character_alive) {
             addSystemMessage('💀 Tu personaje ha caído. La aventura ha terminado.');
@@ -132,6 +137,7 @@ async function handleAction(e) {
         }
 
     } catch (err) {
+        setAIStatus('error');
         addSystemMessage('❌ Error: ' + err.message);
     } finally {
         currentDiceResult = null;
@@ -149,26 +155,38 @@ async function handleAction(e) {
  * Tira un dado del tipo indicado. Solo 1 tiro por turno.
  */
 function rollDice(sides) {
-    if (diceUsedThisTurn) {
-        return; // ya tiró este turno
-    }
+    if (diceUsedThisTurn) return;
     diceUsedThisTurn = true;
 
     const result = Math.floor(Math.random() * sides) + 1;
     currentDiceResult = result;
-    const display = document.getElementById('dice-result');
-    display.textContent = `🎲 d${sides}: ${result}`;
 
-    // Deshabilitar botones de dados hasta el próximo turno
+    const isCritical = sides === 20 && result === 20;
+    const isFumble   = sides === 20 && result === 1;
+
+    const display = document.getElementById('dice-result');
+    // Resetear clases previas
+    display.className = 'font-bold ml-2 self-center transition-all';
+
+    if (isCritical) {
+        display.textContent = `🎲 d20: 20 ⚡ ¡CRÍTICO!`;
+        display.classList.add('text-yellow-300', 'dice-critical');
+        showToast('⚡ ¡GOLPE CRÍTICO! Nat 20', 'green');
+    } else if (isFumble) {
+        display.textContent = `🎲 d20: 1 💀 FALLO TOTAL`;
+        display.classList.add('text-red-400');
+        showToast('💀 ¡Fallo Total! Nat 1', 'red');
+    } else {
+        display.textContent = `🎲 d${sides}: ${result}`;
+        display.classList.add('text-amber-400');
+        showToast(`🎲 Tiraste d${sides}: ${result}`, 'amber');
+    }
+
     _enableDiceButtons(false);
     document.getElementById('dice-used-msg').classList.remove('hidden');
 
-    // Animación de dado
     display.classList.add('dice-rolling');
     setTimeout(() => display.classList.remove('dice-rolling'), 400);
-
-    // Toast notification
-    showToast(`🎲 Tiraste d${sides}: ${result}`, 'amber');
 }
 
 /**
@@ -198,13 +216,30 @@ function renderHistory(history) {
 }
 
 /**
- * Agrega un mensaje del DM al log.
+ * Agrega un mensaje del DM al log con formato de párrafos.
  */
 function addDMMessage(text) {
     const container = document.getElementById('narrative-container');
     const div = document.createElement('div');
     div.className = 'message-dm';
-    div.textContent = text;
+
+    // Encabezado del DM
+    const hdr = document.createElement('div');
+    hdr.className = 'message-dm-header';
+    hdr.textContent = '🧙 Dungeon Master';
+    div.appendChild(hdr);
+
+    // Cuerpo con párrafos separados
+    const body = document.createElement('div');
+    body.className = 'message-dm-body';
+    const paragraphs = text.split(/\n+/).filter(p => p.trim());
+    (paragraphs.length ? paragraphs : [text]).forEach(p => {
+        const pEl = document.createElement('p');
+        pEl.textContent = p.trim();
+        body.appendChild(pEl);
+    });
+    div.appendChild(body);
+
     container.appendChild(div);
     scrollToBottom();
 }
@@ -280,6 +315,26 @@ function updateXP(xp) {
     if (bar) {
         bar.style.width = `${xpInLevel}%`;
     }
+}
+
+/**
+ * Actualiza el indicador de estado de la IA en el header.
+ * @param {'idle'|'thinking'|'ok'|'error'} status
+ */
+function setAIStatus(status) {
+    const dot   = document.getElementById('ai-dot');
+    const label = document.getElementById('ai-label');
+    if (!dot || !label) return;
+    const states = {
+        idle:     { dot: 'bg-gray-600',                          text: 'IA',         cls: 'text-gray-600' },
+        thinking: { dot: 'bg-yellow-400 animate-pulse',          text: 'Pensando…',  cls: 'text-yellow-400' },
+        ok:       { dot: 'bg-emerald-500',                       text: 'Conectada',  cls: 'text-emerald-400' },
+        error:    { dot: 'bg-red-500',                           text: 'Error',      cls: 'text-red-400' },
+    };
+    const s = states[status] || states.idle;
+    dot.className   = `w-2 h-2 rounded-full inline-block ${s.dot}`;
+    label.className = `text-xs ${s.cls}`;
+    label.textContent = s.text;
 }
 
 /**

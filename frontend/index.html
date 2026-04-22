@@ -47,7 +47,7 @@
             <!-- Lista de partidas guardadas -->
             <div id="saves-section" class="hidden mt-4">
                 <h3 class="text-gray-400 text-sm mb-2 text-left">📜 Tus partidas</h3>
-                <div id="saves-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
+                <div id="saves-list" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
             </div>
 
             <button id="btn-logout" onclick="logout()"
@@ -82,11 +82,19 @@
                         section.classList.remove('hidden');
                         const list = document.getElementById('saves-list');
 
+                        const WORLD_ICONS = {
+                            fantasia: '🏰',
+                            ciencia_ficcion: '🚀',
+                            isekai: '🌀',
+                            fantasia_oscura: '💀',
+                        };
+
                         saves.forEach(save => {
                             const div = document.createElement('div');
                             div.className = 'flex items-center justify-between bg-gray-900 border border-gray-800 rounded-lg p-3 hover:border-gray-700 transition';
 
-                            const status = save.is_active
+                            const worldIcon = WORLD_ICONS[save.character_world] || '🗡️';
+                            const statusDot = save.is_active
                                 ? '<span class="text-emerald-400 text-xs">● Activa</span>'
                                 : '<span class="text-gray-600 text-xs">● Terminada</span>';
 
@@ -94,14 +102,58 @@
                                 day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
                             });
 
-                            div.innerHTML = `
-                                <div class="text-left flex-1">
-                                    <p class="text-gray-200 text-sm font-medium">${save.title}</p>
-                                    <p class="text-gray-500 text-xs">Turno ${save.turn_count} — ${date} ${status}</p>
-                                </div>
-                                ${save.is_active ? `<button onclick="resumeSave('${save.id}')" class="bg-emerald-700 hover:bg-emerald-600 px-3 py-1 rounded text-sm text-white ml-2">▶ Jugar</button>` : ''}
-                                <button onclick="deleteSave('${save.id}', this)" class="bg-gray-700 hover:bg-red-800 px-2 py-1 rounded text-xs text-gray-400 hover:text-white ml-1" title="Eliminar">🗑️</button>
-                            `;
+                            // Info segura via textContent
+                            const infoDiv = document.createElement('div');
+                            infoDiv.className = 'text-left flex-1 min-w-0';
+
+                            const titleRow = document.createElement('div');
+                            titleRow.className = 'flex items-center gap-1';
+                            const worldSpan = document.createElement('span');
+                            worldSpan.textContent = worldIcon;
+                            const titleP = document.createElement('p');
+                            titleP.className = 'text-gray-200 text-sm font-medium truncate';
+                            titleP.textContent = save.title;
+                            titleRow.appendChild(worldSpan);
+                            titleRow.appendChild(titleP);
+
+                            const metaP = document.createElement('p');
+                            metaP.className = 'text-gray-500 text-xs mt-0.5';
+                            metaP.textContent = `Turno ${save.turn_count} — ${date}`;
+
+                            infoDiv.appendChild(titleRow);
+                            infoDiv.appendChild(metaP);
+                            if (save.character_name) {
+                                const charP = document.createElement('p');
+                                charP.className = 'text-gray-600 text-xs';
+                                charP.textContent = `✦ ${save.character_name}`;
+                                infoDiv.appendChild(charP);
+                            }
+
+                            div.appendChild(infoDiv);
+
+                            // Indicador estado
+                            const statusSpan = document.createElement('span');
+                            statusSpan.className = save.is_active ? 'text-emerald-400 text-xs mx-2' : 'text-gray-600 text-xs mx-2';
+                            statusSpan.textContent = save.is_active ? '● Activa' : '● Fin';
+                            div.appendChild(statusSpan);
+
+                            // Botón jugar
+                            if (save.is_active) {
+                                const playBtn = document.createElement('button');
+                                playBtn.className = 'bg-emerald-700 hover:bg-emerald-600 px-3 py-1 rounded text-sm text-white ml-1 shrink-0';
+                                playBtn.textContent = '▶ Jugar';
+                                playBtn.onclick = () => resumeSave(save.id);
+                                div.appendChild(playBtn);
+                            }
+
+                            // Botón eliminar
+                            const delBtn = document.createElement('button');
+                            delBtn.className = 'bg-gray-700 hover:bg-red-800 px-2 py-1 rounded text-xs text-gray-400 hover:text-white ml-1 shrink-0';
+                            delBtn.title = 'Eliminar';
+                            delBtn.textContent = '🗑️';
+                            delBtn.onclick = () => deleteSave(save.id, div);
+                            div.appendChild(delBtn);
+
                             list.appendChild(div);
                         });
                     }
@@ -121,11 +173,11 @@
             location.href = '/game.html';
         }
 
-        async function deleteSave(saveId, btn) {
+        async function deleteSave(saveId, divEl) {
             if (!confirm('¿Eliminar esta partida? No se puede deshacer.')) return;
             try {
                 await apiDelete(`/game/saves/${saveId}`);
-                btn.closest('div.flex').remove();
+                divEl.remove();
                 // Si no quedan partidas, ocultar la sección
                 const list = document.getElementById('saves-list');
                 if (list && list.children.length === 0) {

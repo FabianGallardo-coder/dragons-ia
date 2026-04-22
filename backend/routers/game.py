@@ -263,12 +263,19 @@ async def list_saves(
 ):
     """Lista todas las partidas del usuario."""
     result = await db.execute(
-        select(SaveGame)
+        select(SaveGame, Character.name, Character.world)
+        .join(Character, SaveGame.character_id == Character.id)
         .where(SaveGame.user_id == current_user.id)
         .order_by(SaveGame.updated_at.desc())
     )
-    saves = result.scalars().all()
-    return [SaveGameResponse.model_validate(s) for s in saves]
+    rows = result.all()
+    out = []
+    for save, char_name, char_world in rows:
+        data = SaveGameResponse.model_validate(save)
+        data.character_name = char_name
+        data.character_world = char_world
+        out.append(data)
+    return out
 
 
 @router.get("/saves/{save_id}", response_model=SaveGameDetail)
