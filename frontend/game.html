@@ -7,34 +7,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col font-serif">
+<body class="bg-gray-950 text-gray-100 h-screen overflow-hidden flex flex-col font-serif">
 
-    <!-- Header -->
-    <header class="bg-gray-900 border-b border-gray-800 px-4 py-2">
+    <!-- Header — solo título y navegación -->
+    <header class="bg-gray-900 border-b border-gray-800 px-4 py-2 shrink-0">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <h1 class="text-amber-400 font-bold text-lg">⚔️ Dragons & IA</h1>
-            <div class="flex items-center gap-4 text-sm">
-                <span id="char-info" class="text-gray-400"></span>
-                <div class="flex flex-col items-end gap-1">
-                    <div class="flex items-center gap-2">
-                        <span id="hp-display" class="text-emerald-400 font-bold text-xs"></span>
-                        <div class="hp-bar-bg w-24">
-                            <div id="hp-bar" class="hp-bar-fill bg-emerald-500" style="width:100%"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span id="xp-display" class="text-purple-400 text-xs">XP 0</span>
-                        <div class="xp-bar-bg w-24">
-                            <div id="xp-bar" class="xp-bar-fill" style="width:0%"></div>
-                        </div>
-                    </div>
-                </div>
-                <span id="turn-display" class="text-gray-500"></span>
-                <span id="ai-status" title="Estado de la IA" class="flex items-center gap-1 text-xs">
-                    <span id="ai-dot" class="w-2 h-2 rounded-full inline-block bg-gray-600"></span>
-                    <span id="ai-label" class="text-gray-600">IA</span>
-                </span>
-            </div>
+            <span id="char-info" class="text-gray-400 text-sm truncate max-w-xs"></span>
             <div class="flex gap-2">
                 <button onclick="location.href='/'" class="text-gray-400 hover:text-gray-200 text-sm px-2">
                     🏠 Inicio
@@ -43,7 +22,7 @@
         </div>
     </header>
 
-    <!-- Terminal de juego -->
+    <!-- Terminal de juego — zona que scrollea -->
     <main class="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full" id="game-log">
         <div id="narrative-container" class="space-y-4">
             <!-- Los mensajes se renderizan aquí -->
@@ -53,11 +32,37 @@
         </div>
     </main>
 
-    <!-- Barra de acciones -->
-    <footer class="bg-gray-900 border-t border-gray-800 p-4">
-        <div class="max-w-4xl mx-auto">
+    <!-- Barra de acciones — siempre visible en la parte inferior -->
+    <footer class="bg-gray-900 border-t border-gray-800 p-3 shrink-0">
+        <div class="max-w-4xl mx-auto space-y-2">
+
+            <!-- ── Barra de estado (HP · XP · Turno · IA) ── -->
+            <div class="flex items-center gap-4 text-xs pb-2 border-b border-gray-800 flex-wrap">
+                <!-- HP -->
+                <div class="flex items-center gap-1.5">
+                    <span id="hp-display" class="text-emerald-400 font-bold"></span>
+                    <div class="hp-bar-bg w-20">
+                        <div id="hp-bar" class="hp-bar-fill bg-emerald-500" style="width:100%"></div>
+                    </div>
+                </div>
+                <!-- XP -->
+                <div class="flex items-center gap-1.5">
+                    <span id="xp-display" class="text-purple-400">XP 0</span>
+                    <div class="xp-bar-bg w-20">
+                        <div id="xp-bar" class="xp-bar-fill" style="width:0%"></div>
+                    </div>
+                </div>
+                <!-- Turno -->
+                <span id="turn-display" class="text-gray-500"></span>
+                <!-- Estado IA -->
+                <span id="ai-status" title="Estado de la IA" class="flex items-center gap-1 ml-auto">
+                    <span id="ai-dot" class="w-2 h-2 rounded-full inline-block bg-gray-600"></span>
+                    <span id="ai-label" class="text-gray-600">IA</span>
+                </span>
+            </div>
+
             <!-- Acciones rápidas -->
-            <div class="flex gap-2 mb-3 flex-wrap justify-center" id="quick-actions">
+            <div class="flex gap-2 flex-wrap justify-center" id="quick-actions">
                 <button onclick="quickAction('Atacar al enemigo')" class="bg-red-800 hover:bg-red-700 px-3 py-1 rounded text-sm text-white">⚔️ Atacar</button>
                 <button onclick="quickAction('Me defiendo')" class="bg-blue-800 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white">🛡️ Defenderse</button>
                 <button onclick="quickAction('Reviso mi bolsa e inventario')" class="bg-yellow-800 hover:bg-yellow-700 px-3 py-1 rounded text-sm text-white">🎒 Bolsa</button>
@@ -65,7 +70,7 @@
             </div>
 
             <!-- Dados rápidos -->
-            <div class="flex gap-2 mb-3 flex-wrap justify-center items-center" id="dice-bar">
+            <div class="flex gap-2 flex-wrap justify-center items-center" id="dice-bar">
                 <span class="text-gray-500 text-xs mr-1">🎲 Tirar:</span>
                 <button onclick="rollDice(4)" title="d4 — Daño de daga, curación menor" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d4</button>
                 <button onclick="rollDice(6)" title="d6 — Daño de espada corta, bola de fuego" class="dice-btn bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm text-amber-300">d6</button>
