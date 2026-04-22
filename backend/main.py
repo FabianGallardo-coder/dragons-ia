@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from backend.config import get_settings
 from backend.database import create_tables
-from backend.routers import auth, characters, game, donations
+from backend.routers import auth, characters, game
 
 settings = get_settings()
 
@@ -61,7 +61,6 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(characters.router, prefix="/characters", tags=["Characters"])
 app.include_router(game.router, prefix="/game", tags=["Game"])
-app.include_router(donations.router, prefix="/donations", tags=["Donations"])
 
 # ── Archivos estáticos del frontend ────────────────────────────
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")

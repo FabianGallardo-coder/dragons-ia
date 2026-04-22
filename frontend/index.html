@@ -56,20 +56,7 @@
             </button>
         </div>
 
-        <!-- Donaciones -->
-        <div id="donate-section" class="mt-10 border-t border-gray-800 pt-6">
-            <p class="text-gray-500 text-sm mb-3">Apoyá el proyecto</p>
-            <div class="flex gap-3 justify-center">
-                <a id="btn-paypal" href="#" target="_blank"
-                    class="px-4 py-2 bg-blue-700 hover:bg-blue-600 text-white rounded-lg text-sm transition hidden">
-                    PayPal
-                </a>
-                <a id="btn-mercadopago" href="#" target="_blank"
-                    class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-sm transition hidden">
-                    MercadoPago
-                </a>
-            </div>
-        </div>
+
     </div>
 
     <footer class="absolute bottom-4 text-gray-600 text-sm">
@@ -126,22 +113,7 @@
                 document.getElementById('user-menu').classList.add('hidden');
             }
 
-            // Cargar links de donación
-            try {
-                const donations = await apiGet('/donations/info');
-                if (donations.paypal_url) {
-                    const btn = document.getElementById('btn-paypal');
-                    btn.href = donations.paypal_url;
-                    btn.classList.remove('hidden');
-                }
-                if (donations.mercadopago_url) {
-                    const btn = document.getElementById('btn-mercadopago');
-                    btn.href = donations.mercadopago_url;
-                    btn.classList.remove('hidden');
-                }
-            } catch (e) {
-                // No mostrar donaciones si falla
-            }
+
         });
 
         function resumeSave(saveId) {

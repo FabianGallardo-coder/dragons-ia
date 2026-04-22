@@ -7,6 +7,40 @@ let currentDiceResult = null;
 let isProcessing = false;
 let diceUsedThisTurn = false;
 
+// ── Fuentes por tipo de aventura ──────────────────────────────
+const WORLD_FONTS = {
+    fantasia: {
+        name: 'Cinzel',
+        url: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap',
+        css: "'Cinzel', serif",
+    },
+    ciencia_ficcion: {
+        name: 'Orbitron',
+        url: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap',
+        css: "'Orbitron', monospace",
+    },
+    isekai: {
+        name: 'Philosopher',
+        url: 'https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400&display=swap',
+        css: "'Philosopher', serif",
+    },
+    fantasia_oscura: {
+        name: 'Crimson Text',
+        url: 'https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap',
+        css: "'Crimson Text', serif",
+    },
+};
+
+function applyWorldFont(world) {
+    const font = WORLD_FONTS[world];
+    if (!font) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = font.url;
+    document.head.appendChild(link);
+    document.body.style.fontFamily = font.css;
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     requireAuth();
 
@@ -21,6 +55,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const save = await apiGet(`/game/saves/${saveId}`);
         const charId = save.character_id;
         const character = await apiGet(`/characters/${charId}`);
+
+        // Aplicar fuente según el mundo de la aventura
+        applyWorldFont(character.world);
 
         // Verificar si la partida sigue activa
         if (!save.is_active) {
