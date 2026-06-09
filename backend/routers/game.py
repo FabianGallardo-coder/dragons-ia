@@ -26,6 +26,7 @@ from backend.schemas.game import (
 )
 from backend.services.ai_service import get_ai_response
 from backend.services.dungeon_master import build_system_prompt
+from backend.config import get_settings
 
 router = APIRouter()
 settings = get_settings()
@@ -349,3 +350,30 @@ async def delete_save(
     if not save:
         raise HTTPException(status_code=404, detail="Partida no encontrada.")
     await db.delete(save)
+
+
+@router.get("/ollama/models")
+async def list_ollama_models():
+    """Lista modelos instalados en Ollama Local."""
+    import httpx
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{settings.ollama_api_base}/api/tags")
+            resp.raise_for_status()
+            data = resp.json()
+            models = data.get("models", [])
+            return [
+                {"value": f"ollama/{m['name']}", "label": m['name']}
+                for m in models
+            ]
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail="No se pudo conectar a Ollama Local. Verificá que esté corriendo."
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error consultando Ollama: {exc}"
+        )

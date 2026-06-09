@@ -91,12 +91,7 @@
                 { value: 'ollama/rnj-1:8b', label: 'Rnj-1 (8B)' },
                 { value: 'ollama/devstral-small-2', label: 'Devstral Small 2 (24B)' },
             ],
-            ollama_local: [
-                { value: 'ollama/llama3', label: 'Llama 3' },
-                { value: 'ollama/mistral', label: 'Mistral' },
-                { value: 'ollama/gemma2', label: 'Gemma 2' },
-                { value: 'ollama/phi3', label: 'Phi 3 (liviano)' },
-            ],
+            ollama_local: [], // Se llena dinámicamente desde /game/ollama/models
         };
 
         const HELP_TEXT = {
@@ -164,15 +159,9 @@
             `,
         };
 
-        function updateModels(provider) {
+        async function updateModels(provider) {
             const select = document.getElementById('ai-model');
             select.innerHTML = '';
-            (MODELS[provider] || []).forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.value;
-                opt.textContent = m.label;
-                select.appendChild(opt);
-            });
             document.getElementById('model-help').textContent = HELP_TEXT[provider] || '';
             document.getElementById('api-key').placeholder = PLACEHOLDER[provider] || 'API Key';
 
@@ -187,6 +176,37 @@
             tutorialTitle.textContent = provider === 'ollama_local'
                 ? '📖 ¿Cómo instalar Ollama en tu PC?'
                 : '📖 ¿Cómo obtener tu API Key?';
+
+            // Si es Ollama Local, fetch modelos instalados
+            if (provider === 'ollama_local') {
+                select.innerHTML = '<option value="">⏳ Cargando modelos...</option>';
+                try {
+                    const resp = await fetch('/game/ollama/models');
+                    if (!resp.ok) throw new Error('No se pudo conectar a Ollama');
+                    const models = await resp.json();
+                    MODELS.ollama_local = models;
+                    select.innerHTML = '';
+                    if (models.length === 0) {
+                        select.innerHTML = '<option value="">⚠️ No hay modelos instalados. Ejecutá: ollama pull llama3</option>';
+                    } else {
+                        models.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.value;
+                            opt.textContent = m.label;
+                            select.appendChild(opt);
+                        });
+                    }
+                } catch (err) {
+                    select.innerHTML = `<option value="">❌ Error: ${err.message}. ¿Ollama corriendo?</option>`;
+                }
+            } else {
+                (MODELS[provider] || []).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.value;
+                    opt.textContent = m.label;
+                    select.appendChild(opt);
+                });
+            }
         }
 
         // Cargar config guardada

@@ -17,6 +17,10 @@ engine_kwargs: dict = {"echo": settings.debug}
 if settings.is_sqlite:
     # SQLite necesita check_same_thread=False para async
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+elif "mysql" in settings.async_database_url:
+    # MySQL: pool_pre_ping para detectar conexiones caídas
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 3600
 
 engine = create_async_engine(settings.async_database_url, **engine_kwargs)
 

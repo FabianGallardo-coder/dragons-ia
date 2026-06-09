@@ -1,0 +1,75 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.venv
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Test
+test_dragons_tmp.db
+tests/__pycache__/
+tests/.pytest_cache/
+
+# Docs
+*.md
+!README.md
+
+# Frontend source (not needed in backend container)
+frontend/node_modules/
+frontend/*.html
+frontend/*.css
+frontend/*.js
+frontend/static/
+!frontend/static/**
+
+# Config local
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Misc
+*.bak
+*.tmp
+*.temp

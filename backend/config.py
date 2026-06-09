@@ -16,9 +16,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./dragons_ia.db"
 
     # --- JWT ---
-    jwt_secret_key: str = "cambia-esto-por-un-secreto-largo-y-aleatorio"
-    # IMPORTANTE: En producción, configurar JWT_SECRET_KEY como variable de entorno
-    # con al menos 32 caracteres aleatorios.
+    jwt_secret_key: str = ""
+    # IMPORTANTE: Configurar JWT_SECRET_KEY como variable de entorno obligatoria.
+    # En desarrollo, si no se proporciona, se genera una clave aleatoria temporal.
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 1440  # 24 horas
 
@@ -52,10 +52,17 @@ class Settings(BaseSettings):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("mysql://"):
+            url = url.replace("mysql://", "mysql+aiomysql://", 1)
         return url
 
 
 @lru_cache()
 def get_settings() -> Settings:
     """Retorna la instancia singleton de configuración."""
-    return Settings()
+    settings = Settings()
+    # Generar secreto aleatorio solo en desarrollo si no se proporcionó
+    if settings.debug and not settings.jwt_secret_key:
+        import secrets
+        settings.jwt_secret_key = secrets.token_urlsafe(32)
+    return settings

@@ -168,8 +168,22 @@ dragons-ia/
 ├── requirements-dev.txt
 ├── pytest.ini
 ├── Dockerfile
+├── docker-compose.yml          # Orquestacion Docker
 └── render.yaml
 ```
+
+---
+
+## Auditorias y Documentacion
+El proyecto incluye auditorias detalladas para asegurar calidad y seguridad:
+- `TECHNICAL_AUDIT.md` / `BACKEND_AUDIT.md` / `FRONTEND_AUDIT.md` — Analisis tecnico y de implementacion.
+- `SECURITY_AUDIT.md` — Evaluacion de vulnerabilidades y mitigaciones.
+- `QA_REPORT.md` — Reporte de pruebas y calidad.
+- `BUSINESS_ANALYSIS.md` — Definicion de objetivos y alcance.
+- `CONTEXT_TRANSFER.md` — Guia para transferencia de contexto.
+- `PROJECT_INVENTORY.md` — Inventario de activos y componentes.
+- `DEVOPS_AUDIT.md` — Analisis de despliegue y operacion.
+- `presentacion.md` — Material de presentacion del proyecto.
 
 ---
 
