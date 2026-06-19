@@ -66,7 +66,7 @@ El juego soporta multiples proveedores de IA a traves de LiteLLM:
 |---|---|---|
 | Anthropic | `claude-3-5-haiku-20241022` | API Key de Anthropic |
 | Ollama Cloud | `ollama/gemma3:12b` | API Key de Ollama Cloud |
-| Ollama Local | `ollama/llama3.2` | Ollama corriendo en tu PC (sin API key) |
+| Ollama Local | `ollama/dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M` | Ollama corriendo en tu PC (sin API key) - Modelos optimizados para bajos recursos disponibles |
 
 ### Anthropic (Claude)
 
@@ -94,10 +94,13 @@ El juego soporta multiples proveedores de IA a traves de LiteLLM:
 ### Ollama Local (gratis, sin API key)
 
 1. Instala Ollama: [ollama.com/download](https://ollama.com/download)
-2. Descarga un modelo: `ollama pull llama3.2`
+2. Descarga un modelo recomendado para bajos recursos: `ollama pull dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M` o `ollama pull dolphin-phi`
 3. En el juego: **Configuracion → Ollama Local → elegi el modelo**
 
 > La API key se guarda **solo en tu navegador** (localStorage) — nunca se envia al servidor.
+> El sistema ahora incluye verificación automática del estado de Ollama y fallback inteligente de modelos. 
+> Si el modelo seleccionado no está instalado, el juego sugerirá usar el modelo óptimo según tu RAM disponible.
+> En config.html, verás un diagnóstico en tiempo real del estado de Ollama con recomendaciones específicas.
 
 ---
 

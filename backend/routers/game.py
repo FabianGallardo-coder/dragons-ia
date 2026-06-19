@@ -377,3 +377,42 @@ async def list_ollama_models():
             status_code=500,
             detail=f"Error consultando Ollama: {exc}"
         )
+
+
+@router.post("/ollama/models/cloud")
+async def list_ollama_cloud_models(api_key: str):
+    """Lista modelos disponibles en Ollama Cloud usando API key."""
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(
+                "https://ollama.com/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"}
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            models = data.get("data", [])
+            return [
+                {"value": f"ollama/{m['id']}", "label": m['id']}
+                for m in models
+            ]
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 401:
+            raise HTTPException(
+                status_code=401,
+                detail="API Key inválida para Ollama Cloud"
+            )
+        raise HTTPException(
+            status_code=exc.response.status_code,
+            detail=f"Error de Ollama Cloud: {exc.response.text}"
+        )
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail="No se pudo conectar a Ollama Cloud. Verificá tu conexión a internet."
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error consultando Ollama Cloud: {exc}"
+        )

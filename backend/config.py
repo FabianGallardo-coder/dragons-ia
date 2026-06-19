@@ -23,7 +23,9 @@ class Settings(BaseSettings):
     jwt_expiration_minutes: int = 1440  # 24 horas
 
     # --- IA ---
-    default_ai_model: str = "claude-3-haiku-20240307"
+    # Using dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M as default for local Ollama (low resource)
+    # Alternative: dolphin-phi
+    default_ai_model: str = "ollama/dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M"
     anthropic_api_key: str = ""
     ollama_api_base: str = "http://localhost:11434"
     ollama_api_key: str = ""

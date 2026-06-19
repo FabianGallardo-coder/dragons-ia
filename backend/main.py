@@ -19,7 +19,7 @@ from slowapi.errors import RateLimitExceeded
 
 from backend.config import get_settings
 from backend.database import create_tables
-from backend.routers import auth, characters, game
+from backend.routers import auth, characters, game, system
 
 settings = get_settings()
 
@@ -111,6 +111,7 @@ async def readiness_check():
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(characters.router, prefix="/characters", tags=["Characters"])
 app.include_router(game.router, prefix="/game", tags=["Game"])
+app.include_router(system.router, prefix="/api/system", tags=["system"])
 
 # ── Archivos estáticos del frontend ────────────────────────────
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")

@@ -18,7 +18,7 @@ services:
       - key: DEBUG
         value: "false"
       - key: DEFAULT_AI_MODEL
-        value: "claude-3-haiku-20240307"
+        value: "ollama/dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M"
       - key: PYTHON_VERSION
         value: "3.11.9"
     autoDeploy: true

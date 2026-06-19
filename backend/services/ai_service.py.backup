@@ -11,7 +11,6 @@ import os
 import litellm
 
 from backend.config import get_settings
-from backend.services.system_check import check_ollama_status
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -64,28 +63,7 @@ async def get_ai_response(
             kwargs["model"] = f"openai/{raw_model}"
             kwargs["api_base"] = "https://ollama.com/v1"
         else:
-            # Ollama Local: usar endpoint local nativo y verificar disponibilidad del modelo
-            ollama_status = await check_ollama_status()
-            if not ollama_status["running"]:
-                raise RuntimeError(
-                    f"No se pudo conectar con Ollama. {ollama_status['install_instructions']}"
-                )
-            # If there are no models installed at all, raise an error
-            if not ollama_status["models"]:
-                raise RuntimeError(
-                    f"No se encontró ningún modelo de Ollama instalado. "
-                    f"Te recomendamos ejecutar: 'ollama pull {ollama_status['recommended_model']}'"
-                )
-            raw_model = target_model.removeprefix("ollama/")
-            # If the model is not installed, try to fall back to the recommended model
-            if raw_model not in ollama_status["models"]:
-                logger.warning(
-                    f"Modelo {raw_model} no está instalado en Ollama. "
-                    f"Usando el modelo recomendado: {ollama_status['recommended_model']}"
-                )
-                target_model = f"ollama/{ollama_status['recommended_model']}"
-                kwargs["model"] = target_model
-            # Set the api_base for Ollama Local
+            # Ollama Local: usar endpoint local nativo
             kwargs["api_base"] = settings.ollama_api_base
     elif target_model.startswith("claude"):
         # Asegurar que Anthropic reciba la API key

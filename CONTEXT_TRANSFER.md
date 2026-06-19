@@ -174,7 +174,7 @@ database_url=mysql+aiomysql://root:password@localhost:3306/dragons_ia
 jwt_secret_key=your-strong-random-secret-min-32-chars-here
 
 # AI Configuration (optional - defaults work for Anthropic trial)
-default_ai_model=claude-3-haiku-20240307
+default_ai_model=ollama/dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M
 anthropic_api_key=your-anthropic-key-here  # Get from console.anthropic.com
 ollama_api_base=http://localhost:11434
 
