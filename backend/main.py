@@ -111,7 +111,7 @@ async def readiness_check():
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(characters.router, prefix="/characters", tags=["Characters"])
 app.include_router(game.router, prefix="/game", tags=["Game"])
-app.include_router(system.router, prefix="/api/system", tags=["system"])
+app.include_router(system.router, tags=["system"])
 
 # ── Archivos estáticos del frontend ────────────────────────────
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")
