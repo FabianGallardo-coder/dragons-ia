@@ -98,9 +98,20 @@ El juego soporta multiples proveedores de IA a traves de LiteLLM:
 3. En el juego: **Configuracion → Ollama Local → elegi el modelo**
 
 > La API key se guarda **solo en tu navegador** (localStorage) — nunca se envia al servidor.
-> El sistema ahora incluye verificación automática del estado de Ollama y fallback inteligente de modelos. 
+> El sistema ahora incluye verificación automática del estado de Ollama y fallback inteligente de modelos.
 > Si el modelo seleccionado no está instalado, el juego sugerirá usar el modelo óptimo según tu RAM disponible.
 > En config.html, verás un diagnóstico en tiempo real del estado de Ollama con recomendaciones específicas.
+>
+> ### Sistema de detección Ollama + Fallback automático (v1.1)
+>
+> - **Endpoint diagnóstico**: `GET /api/system/ollama-status` — retorna estado del servidor, modelos instalados, RAM disponible, modelo recomendado y mejor modelo según prioridad de RAM.
+> - **Frontend (config.html)**: Banner diagnóstico en tiempo real:
+>   - 🔴 **Ollama no corriendo**: instrucciones de instalación específicas por SO (Windows/Linux/macOS)
+>   - 🟡 **Ollama corriendo sin modelos**: comando `ollama pull` recomendado según RAM
+>   - 🟢 **Ollama activo**: lista de modelos disponibles (N modelos)
+> - **Fallback inteligente en `ai_service.py`**: si el modelo configurado no está instalado, selecciona automáticamente el `best_model` disponible según RAM y prioridad (no el genérico `recommended_model`).
+> - **Nuevo módulo `backend/services/system_check.py`**: `get_os_info()`, `get_available_ram_gb()`, `recommend_model_for_ram()`, `select_best_model()`, `check_ollama_status()`.
+> - **Tests**: 24/24 tests pasando (system_check, ai_service, schemas).
 
 ---
 
@@ -253,6 +264,23 @@ node tests/frontend/test_game_logic.js
 > ⚠️ **Importante:** Configura `JWT_SECRET_KEY` como variable de entorno fija en Render.
 > Si no esta configurada, cada restart genera tokens incompatibles con los anteriores,
 > causando errores "Token invalido o expirado" al reiniciar el servidor.
+
+---
+
+## Próximas mejoras (TTS - Narrador de voz)
+
+**Planificado para próxima iteración:**
+
+### Fase 1: Web Speech API (navegador - gratis, sin backend)
+- [ ] Crear `frontend/static/js/tts.js`: `speak(text)`, `stop()`, `setVoice()`, `setRate()`, persistencia en `localStorage`
+- [ ] Integrar en `game.js`: `addDMMessage()` llama `tts.speak(narrative)` respetando setting usuario
+- [ ] UI en `game.html`: toggle 🔊/🔇, selector voces español (`speechSynthesis.getVoices()`), slider velocidad 0.5x–2x
+
+### Fase 2: Piper TTS local (opcional, mejor calidad)
+- [ ] `pip install piper-tts` en `requirements.txt`
+- [ ] Endpoint `POST /api/tts` → retorna audio MP3/WAV
+- [ ] Frontend: detectar Piper disponible y usar `<audio>` en lugar de Web Speech
+- [ ] Modelo voz español: `es_ES` o `es_MX` (~50-100MB)
 
 ---
 
