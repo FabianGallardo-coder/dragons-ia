@@ -60,6 +60,7 @@ async def test_ollama_model_not_installed_but_other_available():
             "models": ["llama3:8b", "dolphin-phi"],  # installed models
             "ram_available_gb": 6.0,
             "recommended_model": "dolphin-phi",
+            "best_model": "dolphin-phi",  # Because for 6GB RAM, dolphin-phi is the best match
             "os": "Linux",
             "os_friendly": "Linux",
             "install_instructions": "test instructions"

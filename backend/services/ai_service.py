@@ -77,16 +77,25 @@ async def get_ai_response(
                     f"Te recomendamos ejecutar: 'ollama pull {ollama_status['recommended_model']}'"
                 )
             raw_model = target_model.removeprefix("ollama/")
-            # If the model is not installed, try to fall back to the recommended model
+            # If the model is not installed, try to fall back to the best available model
             if raw_model not in ollama_status["models"]:
-                logger.warning(
-                    f"Modelo {raw_model} no está instalado en Ollama. "
-                    f"Usando el modelo recomendado: {ollama_status['recommended_model']}"
-                )
-                target_model = f"ollama/{ollama_status['recommended_model']}"
-                kwargs["model"] = target_model
-            # Set the api_base for Ollama Local
-            kwargs["api_base"] = settings.ollama_api_base
+                best_model = ollama_status.get("best_model")
+                if best_model:
+                    logger.warning(
+                        f"Modelo {raw_model} no está instalado en Ollama. "
+                        f"Usando el mejor modelo disponible: {best_model}"
+                    )
+                    target_model = f"ollama/{best_model}"
+                    kwargs["model"] = target_model
+                else:
+                    # This should not happen because we have models, but just in case
+                    fallback = ollama_status["models"][0]
+                    logger.warning(
+                        f"Modelo {raw_model} no está instalado en Ollama. "
+                        f"Usando el primer modelo disponible: {fallback}"
+                    )
+                    target_model = f"ollama/{fallback}"
+                    kwargs["model"] = target_model
     elif target_model.startswith("claude"):
         # Asegurar que Anthropic reciba la API key
         if not api_key and settings.anthropic_api_key:
