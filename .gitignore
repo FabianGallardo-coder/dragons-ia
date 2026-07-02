@@ -40,4 +40,45 @@ Thumbs.db
 # Logs
 *.log
 
+# Coverage
+.coverage
+coverage/
+coverage.xml
+htmlcov/
+
+# Environments (multiple)
+.env.*
+.env.local
+.env.production
+
+# IDE — VS Code (allow workspace settings)
+.vscode/*
+!.vscode/settings.json
+
+# Logs and runtime
+*.log
+*.pid
+*.seed
+
+# Build artifacts
+*.whl
+*.tar.gz
+*.zip
+*.exe
+*.dmg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter
+.ipynb_checkpoints/
+
+# PyInstaller
+*.spec
+
+# Cython
+*.pyx
+*.pxd
+
 # Docker

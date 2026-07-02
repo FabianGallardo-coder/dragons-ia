@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     ollama_api_base: str = "http://localhost:11434"
     ollama_api_key: str = ""
 
+    # --- Monitoreo ---
+    sentry_dsn: str = ""
+
     # --- Servidor ---
     host: str = "0.0.0.0"
     port: int = 8000

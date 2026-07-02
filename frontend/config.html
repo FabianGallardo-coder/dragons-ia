@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Configuración — Dragons & IA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/tailwind.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center font-serif">
@@ -48,6 +48,12 @@
                 </p>
             </div>
 
+            <!-- Botón cargar modelos (solo Ollama Cloud) -->
+            <button id="btn-load-cloud-models" onclick="loadCloudModels(document.getElementById('api-key').value.trim())"
+                class="w-full p-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition hidden text-sm mb-4">
+                🔄 Cargar modelos desde Ollama Cloud
+            </button>
+
             <!-- Tutorial -->
             <div id="tutorial-box" class="bg-gray-900 border border-gray-700 rounded-lg p-4">
                 <h3 class="text-amber-400 font-bold text-sm mb-2">📖 ¿Cómo obtener tu API Key?</h3>
@@ -62,6 +68,39 @@
                     <option value="es" selected>Español</option>
                     <option value="en">English</option>
                 </select>
+            </div>
+
+            <!-- TTS: Narración por voz -->
+            <div class="border-t border-gray-700 pt-4 mt-4">
+                <h3 class="text-amber-400 font-bold text-sm mb-3">🔊 Narración por Voz (TTS)</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <label class="text-gray-300 text-sm">Estado:</label>
+                        <button id="tts-toggle-config" onclick="toggleTTS()"
+                            class="px-3 py-1 rounded text-sm transition flex items-center gap-1 bg-amber-800/40 text-amber-300">
+                            <span id="tts-icon-config">🔊</span>
+                            <span id="tts-label-config">Activado</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="text-gray-300 text-sm">Velocidad:</label>
+                        <input type="range" id="tts-rate-config" min="0.5" max="2" step="0.1"
+                            oninput="document.getElementById('tts-rate-val-config').textContent=+this.value+'x'"
+                            class="w-24 h-1 accent-amber-500 cursor-pointer">
+                        <span id="tts-rate-val-config" class="text-gray-400 text-sm w-8">1.0x</span>
+                    </div>
+                    <div>
+                        <label class="text-gray-300 text-sm">Voz:</label>
+                        <select id="tts-voice-config" onchange="changeTTSVoice(this.value)"
+                            class="w-full p-2 mt-1 bg-gray-800 border border-gray-700 rounded text-gray-100 text-sm">
+                            <option value="">⚡ Voz por defecto</option>
+                        </select>
+                    </div>
+                    <p class="text-gray-600 text-xs">
+                        💡 Usa Web Speech API (navegador). Si tenés Piper TTS instalado en el servidor,
+                        se usará automáticamente para mejor calidad.
+                    </p>
+                </div>
             </div>
 
             <button type="submit"
@@ -81,6 +120,7 @@
 
     <script src="/static/js/api.js"></script>
     <script src="/static/js/auth.js"></script>
+    <script src="/static/js/tts.js"></script>
     <script>
         const MODELS = {
             anthropic: [
@@ -88,12 +128,7 @@
                 { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku (rápido)' },
                 { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku (económico)' },
             ],
-            ollama_cloud: [
-                { value: 'ollama/qwen3.5', label: 'Qwen 3.5 (recomendado)' },
-                { value: 'ollama/nemotron-3-nano', label: 'Nemotron 3 Nano (liviano)' },
-                { value: 'ollama/rnj-1:8b', label: 'Rnj-1 (8B)' },
-                { value: 'ollama/devstral-small-2', label: 'Devstral Small 2 (24B)' },
-            ],
+            ollama_cloud: [], // Se llena dinámicamente desde /game/ollama/models/cloud
             ollama_local: [], // Se llena dinámicamente desde /game/ollama/models
         };
 
@@ -234,6 +269,10 @@
             document.getElementById('model-help').textContent = HELP_TEXT[provider] || '';
             document.getElementById('api-key').placeholder = PLACEHOLDER[provider] || 'API Key';
 
+            // Mostrar/ocultar botón cargar modelos
+            const loadBtn = document.getElementById('btn-load-cloud-models');
+            if (loadBtn) loadBtn.classList.toggle('hidden', provider !== 'ollama_cloud');
+
             // Ocultar API key para Ollama local
             document.getElementById('api-key-section').style.display =
                 provider === 'ollama_local' ? 'none' : 'block';
@@ -246,7 +285,6 @@
                 ? '📖 ¿Cómo instalar Ollama en tu PC?'
                 : '📖 ¿Cómo obtener tu API Key?';
 
-            // Si es Ollama Local, fetch modelos instalados
             if (provider === 'ollama_local') {
                 select.innerHTML = '<option value="">⏳ Cargando modelos...</option>';
                 try {
@@ -268,6 +306,13 @@
                 } catch (err) {
                     select.innerHTML = `<option value="">❌ Error: ${err.message}. ¿Ollama corriendo?</option>`;
                 }
+            } else if (provider === 'ollama_cloud') {
+                select.innerHTML = '<option value="">Ingresá tu API Key y presioná "Cargar modelos"</option>';
+                // Si hay API key guardada, cargar automáticamente
+                const savedKey = document.getElementById('api-key').value.trim();
+                if (savedKey) {
+                    await loadCloudModels(savedKey);
+                }
             } else {
                 (MODELS[provider] || []).forEach(m => {
                     const opt = document.createElement('option');
@@ -275,6 +320,51 @@
                     opt.textContent = m.label;
                     select.appendChild(opt);
                 });
+            }
+        }
+
+        function showMsg(text, type = 'green') {
+            const el = document.getElementById('save-msg');
+            el.textContent = text;
+            el.className = 'text-center mt-4 ' + (type === 'red' ? 'text-red-400' : 'text-emerald-400');
+            el.classList.remove('hidden');
+            setTimeout(() => el.classList.add('hidden'), 3000);
+        }
+
+        async function loadCloudModels(apiKey) {
+            if (!apiKey) return;
+            const select = document.getElementById('ai-model');
+            select.innerHTML = '<option value="">⏳ Cargando modelos desde Ollama Cloud...</option>';
+            try {
+                const resp = await fetch('/game/ollama/models/cloud', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: apiKey }),
+                });
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    throw new Error(err.detail || 'Error al cargar modelos');
+                }
+                const models = await resp.json();
+                MODELS.ollama_cloud = models;
+                select.innerHTML = '';
+                if (models.length === 0) {
+                    select.innerHTML = '<option value="">⚠️ No hay modelos disponibles</option>';
+                } else {
+                    models.sort((a, b) => a.label.localeCompare(b.label));
+                    models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.value;
+                        opt.textContent = m.label;
+                        select.appendChild(opt);
+                    });
+                    // Seleccionar el primer modelo por defecto
+                    if (select.options.length > 0) select.selectedIndex = 0;
+                }
+                showMsg(models.length + ' modelos cargados desde Ollama Cloud', 'green');
+            } catch (err) {
+                select.innerHTML = `<option value="">❌ ${err.message}</option>`;
+                showMsg(err.message, 'red');
             }
         }
 
@@ -312,9 +402,58 @@
                 updateModels(e.target.value);
             });
             
+            // Enter en el campo API Key → cargar modelos (si es Ollama Cloud)
+            document.getElementById('api-key').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && providerEl.value === 'ollama_cloud') {
+                    e.preventDefault();
+                    loadCloudModels(e.target.value.trim());
+                }
+            });
+            
             // Check Ollama status and display message
             checkOllamaStatus();
+
+            // ── TTS initialization ──
+            if (typeof TTS !== 'undefined') {
+                document.getElementById('tts-rate-config').value = TTS.rate;
+                document.getElementById('tts-rate-val-config').textContent = TTS.rate + 'x';
+                updateTTSUIConfig();
+
+                if ('speechSynthesis' in window) {
+                    setTimeout(() => {
+                        const voices = speechSynthesis.getVoices().filter(v => v.lang.startsWith('es'));
+                        const sel = document.getElementById('tts-voice-config');
+                        voices.forEach(v => {
+                            const opt = document.createElement('option');
+                            opt.value = v.voiceURI;
+                            opt.textContent = `${v.name} (${v.lang})`;
+                            sel.appendChild(opt);
+                        });
+                        if (TTS.voiceURI) sel.value = TTS.voiceURI;
+                    }, 500);
+                }
+            }
         });
+
+        function toggleTTS() {
+            if (typeof TTS === 'undefined') return;
+            TTS.toggle();
+            updateTTSUIConfig();
+        }
+
+        function changeTTSVoice(voiceURI) {
+            if (typeof TTS === 'undefined') return;
+            TTS.setVoice(voiceURI);
+        }
+
+        function updateTTSUIConfig() {
+            const on = TTS.enabled;
+            document.getElementById('tts-icon-config').textContent = on ? '🔊' : '🔇';
+            document.getElementById('tts-label-config').textContent = on ? 'Activado' : 'Desactivado';
+            document.getElementById('tts-toggle-config').className =
+                on ? 'px-3 py-1 rounded text-sm transition flex items-center gap-1 bg-amber-800/40 text-amber-300' :
+                     'px-3 py-1 rounded text-sm transition flex items-center gap-1 bg-gray-800 text-gray-500';
+        }
 
         document.getElementById('config-form').addEventListener('submit', (e) => {
             e.preventDefault();

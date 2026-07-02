@@ -47,13 +47,8 @@ tests/.pytest_cache/
 *.md
 !README.md
 
-# Frontend source (not needed in backend container)
+# Frontend source (keep everything — app serves HTML/CSS/JS)
 frontend/node_modules/
-frontend/*.html
-frontend/*.css
-frontend/*.js
-frontend/static/
-!frontend/static/**
 
 # Config local
 .env

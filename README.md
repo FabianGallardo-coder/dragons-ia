@@ -65,7 +65,7 @@ El juego soporta multiples proveedores de IA a traves de LiteLLM:
 | Proveedor | Modelo ejemplo | Configuracion |
 |---|---|---|
 | Anthropic | `claude-3-5-haiku-20241022` | API Key de Anthropic |
-| Ollama Cloud | `ollama/gemma3:12b` | API Key de Ollama Cloud |
+| Ollama Cloud | `ollama/gemma3:12b` | API Key de Ollama Cloud (carga modelos dinámicamente desde la API oficial) |
 | Ollama Local | `ollama/dolphin-mistral:7b-v2.6-dpo-laser-q4_K_M` | Ollama corriendo en tu PC (sin API key) - Modelos optimizados para bajos recursos disponibles |
 
 ### Anthropic (Claude)
@@ -80,16 +80,7 @@ El juego soporta multiples proveedores de IA a traves de LiteLLM:
 2. Obtene tu API Key desde **Settings → API Keys**
 3. En el juego: **Configuracion → Ollama Cloud → elegi modelo → pega tu API Key**
 
-**Modelos disponibles en Ollama Cloud (verificados):**
-
-| Modelo | Tamaño | Ideal para |
-|---|---|---|
-| `gemma3:4b` | 4B | Pruebas rapidas |
-| `gemma3:12b` | 12B | Buena narrativa |
-| `gemma3:27b` | 27B | Narrativa avanzada |
-| `ministral-3:8b` | 8B | Eficiente y preciso |
-| `deepseek-v3.1:671b` | 671B | Maxima calidad |
-| `qwen3.5:397b` | 397B | Maxima calidad |
+**Modelos disponibles en Ollama Cloud:** se cargan dinámicamente desde `https://ollama.com/v1/models` al ingresar tu API key. 35+ modelos disponibles incluyendo `gemma3`, `ministral-3`, `deepseek-v3.1`, `qwen3.5`, `nemotron-3`, `mistral-large-3`, `gemma4`, `glm-5`, `kimi-k2.5`, `gemini-3-flash-preview`, y más.
 
 ### Ollama Local (gratis, sin API key)
 
@@ -133,6 +124,8 @@ Cada mundo aplica automaticamente una fuente tipografica tematica durante la ses
 - **Dungeon Master IA** — narracion por parrafos con encabezado distintivo
 - **Personaje D&D 5e** — stats con Point Buy, HP calculado por clase
 - **Dados interactivos** — d4 a d20, un tiro por turno; critico (Nat 20) y fallo total (Nat 1) con efectos visuales
+- **Narración por voz (TTS)** — Web Speech API + Piper TTS local con fallback automático
+- **Arte ASCII dinámico** — escenarios, enemigos y entornos que cambian según la escena
 - **Barra de HP / XP** — actualizacion en tiempo real con colores (verde → amarillo → rojo)
 - **Partidas guardadas** — lista con icono de mundo, nombre del personaje y estado
 - **Indicador de estado IA** — punto en el header: gris / amarillo pulsante / verde / rojo
@@ -152,8 +145,8 @@ dragons-ia/
 │   ├── database.py          # SQLAlchemy async
 │   ├── models/              # ORM: User, Character, SaveGame
 │   ├── schemas/             # Pydantic: user, character, game
-│   ├── routers/             # Endpoints: auth, characters, game
-│   ├── services/            # ai_service, dungeon_master, dice
+│   ├── routers/             # Endpoints: auth, characters, game, tts, ascii
+│   ├── services/            # ai_service, dungeon_master, dice, system_check, tts_service, ascii_art
 │   └── alembic/             # Migraciones DB
 ├── frontend/
 │   ├── index.html           # Inicio / partidas guardadas
@@ -169,7 +162,8 @@ dragons-ia/
 │       └── js/
 │           ├── api.js       # Fetch centralizado + retry + auto-logout
 │           ├── auth.js      # JWT local + expiracion + logout
-│           └── game.js      # Logica de juego, dados, fuentes, estado IA
+│           ├── game.js      # Logica de juego, dados, fuentes, estado IA
+│           └── tts.js       # TTS: Web Speech API + Piper + fallback
 ├── tests/
 │   ├── conftest.py          # Fixtures: BD en memoria, cliente HTTP, auth
 │   ├── test_schemas.py      # Tests Pydantic (15)
@@ -221,6 +215,14 @@ El proyecto incluye auditorias detalladas para asegurar calidad y seguridad:
 - `GET /game/saves/{id}` — Obtener partida con historial completo
 - `POST /game/saves/{id}/save` — Guardar manualmente
 - `DELETE /game/saves/{id}` — Eliminar partida
+- `POST /game/ollama/models/cloud` — Listar modelos disponibles en Ollama Cloud
+
+### TTS
+- `GET /api/tts/status` — Estado de Piper TTS (disponible, voz instalada)
+- `POST /api/tts` — Generar audio WAV desde texto
+
+### ASCII Art
+- `GET /api/ascii/art?world=...&event=...` — Obtener obra ASCII para un evento/mundo
 
 ---
 
@@ -260,6 +262,7 @@ node tests/frontend/test_game_logic.js
 | `DATABASE_URL` | URL de PostgreSQL (Render la provee automaticamente) |
 | `JWT_SECRET_KEY` | Clave secreta para firmar tokens (minimo 32 caracteres) |
 | `DEBUG` | `false` en produccion |
+| `OLLAMA_API_BASE` | URL del servidor Ollama (default: `http://localhost:11434`) |
 
 > ⚠️ **Importante:** Configura `JWT_SECRET_KEY` como variable de entorno fija en Render.
 > Si no esta configurada, cada restart genera tokens incompatibles con los anteriores,
@@ -267,20 +270,22 @@ node tests/frontend/test_game_logic.js
 
 ---
 
-## Próximas mejoras (TTS - Narrador de voz)
+## TTS — Narrador de Voz
 
-**Planificado para próxima iteración:**
+El juego incluye narración por voz con dos niveles de calidad:
 
-### Fase 1: Web Speech API (navegador - gratis, sin backend)
-- [ ] Crear `frontend/static/js/tts.js`: `speak(text)`, `stop()`, `setVoice()`, `setRate()`, persistencia en `localStorage`
-- [ ] Integrar en `game.js`: `addDMMessage()` llama `tts.speak(narrative)` respetando setting usuario
-- [ ] UI en `game.html`: toggle 🔊/🔇, selector voces español (`speechSynthesis.getVoices()`), slider velocidad 0.5x–2x
+1. **Web Speech API** (navegador, gratis): Usa las voces del sistema operativo. Compatible con Chrome, Edge, Safari.
+2. **Piper TTS** (mejor calidad): Si `piper-tts` está instalado y el modelo de voz `es_MX-claude-high` está presente, el juego cambia automáticamente a Piper para una narración más natural.
 
-### Fase 2: Piper TTS local (opcional, mejor calidad)
-- [ ] `pip install piper-tts` en `requirements.txt`
-- [ ] Endpoint `POST /api/tts` → retorna audio MP3/WAV
-- [ ] Frontend: detectar Piper disponible y usar `<audio>` en lugar de Web Speech
-- [ ] Modelo voz español: `es_ES` o `es_MX` (~50-100MB)
+### Activar
+- En el juego: botón 🔊 en el footer para activar/desactivar
+- En **Configuración → Narración por Voz**: selector de velocidad y voz
+
+### Funcionamiento
+- `GET /api/tts/status` — el frontend detecta si Piper está disponible
+- `POST /api/tts` — genera audio WAV con Piper (si disponible)
+- Fallback automático: si Piper falla, vuelve a Web Speech API
+- Chrome prewarm: al hacer click en la página, se desbloquea `speechSynthesis`
 
 ---
 

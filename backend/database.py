@@ -5,6 +5,7 @@ Detecta automáticamente si se usa SQLite (desarrollo) o PostgreSQL (producción
 y configura el engine de forma acorde.
 """
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -15,10 +16,8 @@ settings = get_settings()
 # Argumentos del engine según el tipo de base de datos
 engine_kwargs: dict = {"echo": settings.debug}
 if settings.is_sqlite:
-    # SQLite necesita check_same_thread=False para async
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 elif "mysql" in settings.async_database_url:
-    # MySQL: pool_pre_ping para detectar conexiones caídas
     engine_kwargs["pool_pre_ping"] = True
     engine_kwargs["pool_recycle"] = 3600
 
@@ -28,11 +27,10 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 
 
 class Base(DeclarativeBase):
-    """Clase base para todos los modelos SQLAlchemy."""
     pass
 
 
-async def get_db() -> AsyncSession:
+async def get_db():
     """Dependency de FastAPI que provee una sesión de base de datos."""
     async with async_session() as session:
         try:
@@ -41,8 +39,16 @@ async def get_db() -> AsyncSession:
         except Exception:
             await session.rollback()
             raise
-        finally:
-            await session.close()
+
+
+async def check_db_connection() -> bool:
+    """Verifica conectividad con la base de datos."""
+    try:
+        async with async_session() as session:
+            await session.execute(text("SELECT 1"))
+            return True
+    except Exception:
+        return False
 
 
 async def create_tables() -> None:

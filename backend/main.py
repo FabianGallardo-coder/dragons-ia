@@ -7,6 +7,7 @@ y gestiona el ciclo de vida de la base de datos.
 
 from contextlib import asynccontextmanager
 from pathlib import Path
+import logging
 import secrets
 
 from fastapi import FastAPI, Request, Response
@@ -18,10 +19,17 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from backend.config import get_settings
-from backend.database import create_tables
-from backend.routers import auth, characters, game, system
+from backend.database import check_db_connection, create_tables
+from backend.logging_config import setup_logging
+from backend.routers import ascii_art, auth, characters, game, system, tts
+
 
 settings = get_settings()
+
+# ── Sentry (opcional) ────────────────────────────────────────────
+if settings.sentry_dsn:
+    import sentry_sdk
+    sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0.1)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -29,12 +37,29 @@ FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 
+async def _run_migrations():
+    """Ejecuta migraciones pendientes vía Alembic."""
+    import subprocess, sys
+    try:
+        subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"],
+                       capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as exc:
+        logger = logging.getLogger(__name__)
+        logger.warning("migrations fallaron: %s, usando create_tables", exc.stderr.strip())
+        await create_tables()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Crea las tablas de la BD al iniciar si no existen."""
-    await create_tables()
+    if settings.debug:
+        await create_tables()
+    else:
+        await _run_migrations()
     yield
 
+
+setup_logging(settings.debug)
 
 app = FastAPI(
     title="Dragons & IA",
@@ -66,10 +91,11 @@ async def security_headers(request: Request, call_next):
     # CSP básica
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; "
+        "script-src 'self' 'unsafe-inline'; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data:; "
+        "media-src 'self' blob:; "
         "connect-src 'self' https://ollama.com;"
     )
     response.headers["X-Frame-Options"] = "DENY"
@@ -86,8 +112,6 @@ _allowed_origins = [
 ]
 if not settings.debug:
     _allowed_origins.append("https://dragons-ia.onrender.com")
-else:
-    _allowed_origins.append("*")
 
 app.add_middleware(
     CORSMiddleware,
@@ -104,14 +128,21 @@ async def health_check():
 
 @app.get("/ready", include_in_schema=False)
 async def readiness_check():
-    # Podría verificar conexión a DB aquí
-    return {"status": "ready", "service": "dragons-ia"}
+    ok = await check_db_connection()
+    if ok:
+        return {"status": "ready", "service": "dragons-ia"}
+    return JSONResponse(
+        status_code=503,
+        content={"status": "not_ready", "service": "dragons-ia", "detail": "Database connection failed"}
+    )
 
 # ── Routers de la API ──────────────────────────────────────────
+app.include_router(ascii_art.router, prefix="/api", tags=["ASCII Art"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(characters.router, prefix="/characters", tags=["Characters"])
 app.include_router(game.router, prefix="/game", tags=["Game"])
 app.include_router(system.router, tags=["system"])
+app.include_router(tts.router)
 
 # ── Archivos estáticos del frontend ────────────────────────────
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR / "static")), name="static")

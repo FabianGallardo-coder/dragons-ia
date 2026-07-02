@@ -1,34 +1,38 @@
-version: '3.8'
-
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: dragons-ia-mysql
+  postgres:
+    image: postgres:16-alpine
+    container_name: dragons-ia-postgres
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: dragons_ia
-      MYSQL_USER: dragons
-      MYSQL_PASSWORD: dragonspass
+      POSTGRES_USER: dragons
+      POSTGRES_PASSWORD: dragonspass
+      POSTGRES_DB: dragons_ia
     ports:
-      - "3307:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U dragons -d dragons_ia"]
+      interval: 5s
       timeout: 5s
       retries: 5
-    command: --default-authentication-plugin=mysql_native_password
 
   app:
     build: .
     container_name: dragons-ia-app
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dragons:dragonspass@postgres:5432/dragons_ia
+      DEBUG: "true"
+      JWT_SECRET_KEY: dev-secret-key-change-in-production
+      OLLAMA_API_BASE: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./frontend:/app/frontend:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
-  mysql_data:
+  postgres_data:

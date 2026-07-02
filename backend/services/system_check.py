@@ -9,9 +9,10 @@ import logging
 import httpx
 import psutil
 
+from backend.config import get_settings
+
 logger = logging.getLogger(__name__)
 
-OLLAMA_TAGS_URL = "http://localhost:11434/api/tags"
 OLLAMA_TIMEOUT_SECONDS = 3.0
 
 
@@ -137,12 +138,14 @@ async def check_ollama_status() -> dict:
         dict con: running (bool), models (list[str]), ram_available_gb (float),
         recommended_model (str), best_model (str or None), y si running=False también os_info completo.
     """
+    settings = get_settings()
+    ollama_url = f"{settings.ollama_api_base}/api/tags"
     ram_disponible = get_available_ram_gb()
     modelo_recomendado = recommend_model_for_ram(ram_disponible)
 
     try:
         async with httpx.AsyncClient(timeout=OLLAMA_TIMEOUT_SECONDS) as client:
-            response = await client.get(OLLAMA_TAGS_URL)
+            response = await client.get(ollama_url)
             if response.status_code == 200:
                 data = response.json()
                 modelos_instalados = [m["name"] for m in data.get("models", [])]
@@ -156,7 +159,7 @@ async def check_ollama_status() -> dict:
                     "best_model": best_model,
                 }
     except (httpx.ConnectError, httpx.TimeoutException) as e:
-        logger.info(f"Ollama no disponible en {OLLAMA_TAGS_URL}: {e}")
+        logger.info(f"Ollama no disponible en {ollama_url}: {e}")
     except Exception as e:
         logger.warning(f"Error inesperado verificando Ollama: {e}")
 

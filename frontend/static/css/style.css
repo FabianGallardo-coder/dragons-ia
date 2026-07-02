@@ -199,3 +199,31 @@ input:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--color-gold) !important;
 }
+
+/* ── ASCII Art ──────────────────────────────────────────────── */
+#ascii-art-container {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(245, 158, 11, 0.15);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    max-height: 200px;
+    overflow: hidden;
+}
+#ascii-art-display {
+    color: #F59E0B;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 0.5rem;
+    line-height: 1.1;
+    text-shadow: 0 0 4px rgba(245, 158, 11, 0.2);
+    white-space: pre;
+    overflow-x: auto;
+}
+@media (min-width: 768px) {
+    #ascii-art-container {
+        max-height: 300px;
+    }
+    #ascii-art-display {
+        font-size: 0.65rem;
+    }
+}

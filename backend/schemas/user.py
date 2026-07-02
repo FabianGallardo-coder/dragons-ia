@@ -34,3 +34,14 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Schema para solicitar reset de contraseña."""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Schema para resetear contraseña."""
+    token: str = Field(min_length=1)
+    password: str = Field(min_length=6, max_length=128)

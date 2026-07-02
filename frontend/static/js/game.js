@@ -6,6 +6,7 @@
 let currentDiceResult = null;
 let isProcessing = false;
 let diceUsedThisTurn = false;
+let _currentWorld = null;
 
 // ── Fuentes por tipo de aventura ──────────────────────────────
 const WORLD_FONTS = {
@@ -38,7 +39,9 @@ function applyWorldFont(world) {
     link.rel = 'stylesheet';
     link.href = font.url;
     document.head.appendChild(link);
-    document.body.style.fontFamily = font.css;
+    // Solo aplicar la fuente a la narrativa, no a los controles
+    const container = document.getElementById('narrative-container');
+    if (container) container.style.fontFamily = font.css;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -58,6 +61,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Aplicar fuente según el mundo de la aventura
         applyWorldFont(character.world);
+        _currentWorld = character.world;
 
         // Verificar si la partida sigue activa
         if (!save.is_active) {
@@ -75,6 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderHistory(save.history);
         scrollToBottom();
         setAIStatus('ok');
+
+        // Mostrar banner de bienvenida
+        displayAsciiArt(_currentWorld, 'new_game');
     } catch (err) {
         setAIStatus('error');
         addSystemMessage('Error al cargar la partida: ' + err.message);
@@ -129,6 +136,12 @@ async function handleAction(e) {
         document.getElementById('turn-display').textContent = `Turno ${response.turn_count}`;
 
         setAIStatus('ok');
+
+        // Mostrar ASCII art según el evento detectado
+        const eventType = response.character_alive
+            ? _detectEvent(response.narrative)
+            : 'death';
+        displayAsciiArt(_currentWorld, eventType);
 
         // Verificar muerte del personaje
         if (!response.character_alive) {
@@ -242,6 +255,8 @@ function addDMMessage(text) {
 
     container.appendChild(div);
     scrollToBottom();
+
+    if (typeof TTS !== 'undefined') TTS.speak(text);
 }
 
 /**
@@ -392,6 +407,46 @@ async function saveGame() {
         addSystemMessage('💾 Partida guardada correctamente.');
     } catch (err) {
         addSystemMessage('❌ Error al guardar: ' + err.message);
+    }
+}
+
+/**
+ * Detecta el tipo de evento según la narrativa.
+ */
+function _detectEvent(narrative) {
+    const lower = narrative.toLowerCase();
+    if (/mueres|has caído|agonía|te desplomas|tinieblas|oscuridad eterna/.test(lower)) {
+        return 'death';
+    }
+    if (/atacas?|golpeas?|combate|te ataca|embistes|contraatacas|luchas|espadazos?/.test(lower)) {
+        return 'battle';
+    }
+    if (/vences?|derrotas?|victoria|triunf|cuerpo del enemigo|enemigo cae|te alzas/.test(lower)) {
+        return 'victory';
+    }
+    if (/descansas?|campamento|dormís|reposo|curación|descansás|tienda de campaña/.test(lower)) {
+        return 'rest';
+    }
+    return 'scene';
+}
+
+/**
+ * Obtiene y muestra arte ASCII del backend para un evento/mundo.
+ */
+async function displayAsciiArt(world, event) {
+    if (!world) return;
+    const container = document.getElementById('ascii-art-container');
+    const display = document.getElementById('ascii-art-display');
+    if (!container || !display) return;
+
+    try {
+        const res = await fetch(`/api/ascii/art?event=${encodeURIComponent(event)}&world=${encodeURIComponent(world)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        display.textContent = data.combined;
+        container.classList.remove('hidden');
+    } catch {
+        // Silently fail — ASCII art is decorative
     }
 }
 

@@ -6,9 +6,11 @@ import json
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from backend.config import get_settings
 from backend.database import get_db
@@ -26,10 +28,11 @@ from backend.schemas.game import (
 )
 from backend.services.ai_service import get_ai_response
 from backend.services.dungeon_master import build_system_prompt
-from backend.config import get_settings
 
 router = APIRouter()
 settings = get_settings()
+
+game_limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
 
 
 def _parse_history(history_str: str) -> list[dict]:
@@ -99,7 +102,9 @@ def _char_to_dict(char: Character) -> dict:
 
 
 @router.post("/new", response_model=GameResponse)
+@game_limiter.limit("10/minute")
 async def new_game(
+    request: Request,
     data: GameNewRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -163,7 +168,9 @@ async def new_game(
 
 
 @router.post("/action", response_model=GameResponse)
+@game_limiter.limit("30/minute")
 async def game_action(
+    request: Request,
     data: GameAction,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -261,13 +268,17 @@ async def game_action(
 async def list_saves(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    offset: int = 0,
+    limit: int = 50,
 ):
-    """Lista todas las partidas del usuario."""
+    """Lista las partidas del usuario con paginación."""
     result = await db.execute(
         select(SaveGame, Character.name, Character.world)
         .join(Character, SaveGame.character_id == Character.id)
         .where(SaveGame.user_id == current_user.id)
         .order_by(SaveGame.updated_at.desc())
+        .offset(offset)
+        .limit(limit)
     )
     rows = result.all()
     out = []
@@ -380,9 +391,13 @@ async def list_ollama_models():
 
 
 @router.post("/ollama/models/cloud")
-async def list_ollama_cloud_models(api_key: str):
+async def list_ollama_cloud_models(api_key: str = "", data: dict | None = None):
     """Lista modelos disponibles en Ollama Cloud usando API key."""
     import httpx
+    if not api_key and data and "api_key" in data:
+        api_key = data["api_key"]
+    if not api_key:
+        raise HTTPException(status_code=400, detail="API Key es requerida")
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(

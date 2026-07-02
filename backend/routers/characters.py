@@ -12,7 +12,7 @@ from backend.database import get_db
 from backend.models.character import Character
 from backend.models.user import User
 from backend.routers.auth import get_current_user
-from backend.schemas.character import CharacterCreate, CharacterResponse, CharacterStats
+from backend.schemas.character import CharacterCreate, CharacterEditRequest, CharacterResponse, CharacterStats
 from backend.services.dice import calculate_hp
 
 router = APIRouter()
@@ -96,6 +96,33 @@ async def get_character(
     character = result.scalar_one_or_none()
     if not character:
         raise HTTPException(status_code=404, detail="Personaje no encontrado.")
+    return _character_to_response(character)
+
+
+@router.put("/{character_id}", response_model=CharacterResponse)
+async def update_character(
+    character_id: str,
+    data: CharacterEditRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Actualiza los datos públicos de un personaje."""
+    result = await db.execute(
+        select(Character).where(
+            Character.id == character_id, Character.user_id == current_user.id
+        )
+    )
+    character = result.scalar_one_or_none()
+    if not character:
+        raise HTTPException(status_code=404, detail="Personaje no encontrado.")
+
+    update_data = data.model_dump(exclude_unset=True)
+    if "stats" in update_data and update_data["stats"] is not None:
+        update_data["stats"] = json.dumps(update_data["stats"].model_dump())
+
+    for field, value in update_data.items():
+        setattr(character, field, value)
+
     return _character_to_response(character)
 
 

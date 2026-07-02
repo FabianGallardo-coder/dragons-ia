@@ -61,3 +61,14 @@ class CharacterUpdate(BaseModel):
     level: Optional[int] = None
     experience: Optional[int] = None
     is_alive: Optional[bool] = None
+
+
+class CharacterEditRequest(BaseModel):
+    """Schema para editar datos públicos del personaje."""
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    world: Optional[str] = Field(None, pattern=r"^(fantasia|ciencia_ficcion|isekai|fantasia_oscura)$")
+    race: Optional[str] = Field(None, min_length=2, max_length=50)
+    gender: Optional[str] = Field(None, min_length=1, max_length=30)
+    character_class: Optional[str] = Field(None, min_length=2, max_length=50)
+    unique_object: Optional[str] = Field(None, min_length=2, max_length=200)
+    stats: Optional[CharacterStats] = None

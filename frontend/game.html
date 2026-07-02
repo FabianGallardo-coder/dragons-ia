@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aventura — Dragons & IA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/static/js/tailwind.js"></script>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="bg-gray-950 text-gray-100 h-screen overflow-hidden flex flex-col font-serif">
@@ -23,11 +23,14 @@
     </header>
 
     <!-- Terminal de juego — zona que scrollea -->
-    <main class="flex-1 overflow-y-auto p-4 max-w-4xl mx-auto w-full" id="game-log">
-        <div id="narrative-container" class="space-y-4">
+    <main class="flex-1 overflow-y-auto p-4 w-full" id="game-log">
+        <div id="ascii-art-container" class="hidden mb-6 w-full">
+            <pre id="ascii-art-display" class="text-amber-400 text-center font-mono leading-tight select-none overflow-x-auto"></pre>
+        </div>
+        <div id="narrative-container" class="max-w-4xl mx-auto space-y-4">
             <!-- Los mensajes se renderizan aquí -->
         </div>
-        <div id="loading-indicator" class="text-amber-300 italic hidden mt-4">
+        <div id="loading-indicator" class="text-amber-300 italic hidden mt-4 max-w-4xl mx-auto">
             ✨ El Dungeon Master está pensando...
         </div>
     </main>
@@ -62,6 +65,21 @@
             </div>
 
             <!-- Acciones rápidas -->
+            <!-- TTS controls -->
+            <div class="flex items-center gap-2 text-xs pb-2 border-b border-gray-800 flex-wrap">
+                <button id="tts-toggle" onclick="TTS.toggle();updateTTSButton()"
+                    class="px-2 py-1 rounded text-xs transition flex items-center gap-1"
+                    title="Activar/desactivar narración por voz">
+                    <span id="tts-icon">🔊</span>
+                    <span id="tts-label">Voz</span>
+                </button>
+                <label class="text-gray-500">Vel:</label>
+                <input type="range" id="tts-rate" min="0.5" max="2" step="0.1" value="1.0"
+                    oninput="TTS.setRate(+this.value);document.getElementById('tts-rate-val').textContent=this.value+'x'"
+                    class="w-16 h-1 accent-amber-500 cursor-pointer">
+                <span id="tts-rate-val" class="text-gray-400 w-6">1.0x</span>
+            </div>
+
             <div class="flex gap-2 flex-wrap justify-center" id="quick-actions">
                 <button onclick="quickAction('Atacar al enemigo')" class="bg-red-800 hover:bg-red-700 px-3 py-1 rounded text-sm text-white">⚔️ Atacar</button>
                 <button onclick="quickAction('Me defiendo')" class="bg-blue-800 hover:bg-blue-700 px-3 py-1 rounded text-sm text-white">🛡️ Defenderse</button>
@@ -101,6 +119,21 @@
 
     <script src="/static/js/api.js"></script>
     <script src="/static/js/auth.js"></script>
+    <script src="/static/js/tts.js"></script>
     <script src="/static/js/game.js"></script>
+    <script>
+    function updateTTSButton() {
+        const on = TTS.enabled;
+        document.getElementById('tts-icon').textContent = on ? '🔊' : '🔇';
+        document.getElementById('tts-toggle').className =
+            on ? 'px-2 py-1 rounded text-xs transition flex items-center gap-1 bg-amber-800/40 text-amber-300' :
+                 'px-2 py-1 rounded text-xs transition flex items-center gap-1 bg-gray-800 text-gray-500';
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('tts-rate').value = TTS.rate;
+        document.getElementById('tts-rate-val').textContent = TTS.rate + 'x';
+        updateTTSButton();
+    });
+    </script>
 </body>
 </html>

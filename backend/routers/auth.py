@@ -15,8 +15,16 @@ from slowapi.util import get_remote_address
 
 from backend.config import get_settings
 from backend.database import get_db
+from backend.models.reset_token import ResetToken
 from backend.models.user import User
-from backend.schemas.user import TokenResponse, UserLogin, UserRegister, UserResponse
+from backend.schemas.user import (
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    TokenResponse,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+)
 
 router = APIRouter()
 settings = get_settings()
@@ -108,6 +116,76 @@ async def login(request: Request, data: UserLogin, db: AsyncSession = Depends(ge
         access_token=token,
         user=UserResponse.model_validate(user),
     )
+
+
+@router.post("/forgot-password")
+@auth_limiter.limit(auth_limit)
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Solicita reset de contraseña. Genera token y lo devuelve (sin email)."""
+    import uuid
+
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+    if not user:
+        return {"detail": "Si el email existe, recibirás instrucciones.", "token": None}
+
+    token = uuid.uuid4().hex
+    expires = datetime.now(timezone.utc) + timedelta(minutes=15)
+    reset = ResetToken(
+        id=uuid.uuid4().hex,
+        user_id=user.id,
+        token=pwd_context.hash(token),
+        expires_at=expires,
+    )
+    db.add(reset)
+
+    if settings.debug:
+        return {"detail": "Token generado (modo debug).", "token": token}
+
+    return {"detail": "Si el email existe, recibirás instrucciones.", "token": None}
+
+
+@router.post("/reset-password")
+@auth_limiter.limit(auth_limit)
+async def reset_password(
+    request: Request,
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Resetea la contraseña usando un token válido."""
+    from sqlalchemy import func
+
+    now = datetime.now(timezone.utc)
+    result = await db.execute(
+        select(ResetToken).where(
+            ResetToken.used == False,
+            ResetToken.expires_at > now,
+        )
+    )
+    tokens = result.scalars().all()
+
+    matched = None
+    for rt in tokens:
+        if pwd_context.verify(data.token, rt.token):
+            matched = rt
+            break
+
+    if not matched:
+        raise HTTPException(status_code=400, detail="Token inválido o expirado.")
+
+    result = await db.execute(select(User).where(User.id == matched.user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=400, detail="Usuario no encontrado.")
+
+    user.password_hash = pwd_context.hash(data.password)
+    matched.used = True
+
+    return {"detail": "Contraseña actualizada correctamente."}
 
 
 @router.get("/me", response_model=UserResponse)
