@@ -38,6 +38,24 @@ Open http://localhost:8000
 | `DEBUG` | Debug mode | `true` |
 | `ANTHROPIC_API_KEY` | Anthropic API key (optional) | `` |
 | `OLLAMA_API_BASE` | Ollama server URL | `http://localhost:11434` |
+| `TTS_ENABLED` | Enable TTS | `false` |
+| `TTS_URL` | Piper TTS service URL | `` |
+| `TTS_VOICE` | TTS voice model | `es_MX/claude/high/es_MX-claude-high` |
+
+## Docker Compose
+
+```bash
+# Essential services only (no TTS)
+docker compose up
+
+# With TTS (Piper sidecar)
+docker compose --profile tts up
+
+# All services
+docker compose --profile full up
+```
+
+The `piper-tts` service requires the TTS profile. Mount `./piper_voices/` in both containers.
 
 ## Production (Render.com)
 1. Push to GitHub

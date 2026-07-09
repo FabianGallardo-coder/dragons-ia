@@ -1,6 +1,6 @@
 # Production Readiness Checklist
 
-> Progreso general: **~92%**
+> Progreso general: **~97%**
 
 ---
 
@@ -25,12 +25,43 @@
 
 
 
+## 📋 Immersion Engine — Roadmap
+
+> Progreso: **Fase 0 (MVP) ✅ · Fase 1 (Beta) ✅ · Fase 2 (v1.0) 🔄**
+
+### Fase 0 — MVP (Completada)
+- [x] ASCII Registry modular: 25+ escenas × 2 variantes con selección procedural por seed
+- [x] AnimationManager: partículas CSS para lluvia, nieve, niebla, brasas, polvo, hojas
+- [x] AudioManager: skeleton listo para Fase 1
+- [x] AssetRegistry: registro central de activos
+- [x] `ImmersionEngine` integrado como orquestador único (reemplaza `displayAsciiArt()`)
+- [x] UI dinámica: temas con transiciones CSS suaves, brillo ajustable por hora/luz
+
+### Fase 1 — Beta (Completada)
+- [x] ASCII modular por capas: 11 fondos × 15 elementos × 10 criaturas × 5 decoraciones
+- [x] Sistema de variantes con seeded PRNG (Mulberry32) para no repetir arte
+- [x] 10+ SFX sintetizados vía Web Audio API (fuego, lluvia, viento, pasos, espada, magia, puerta, agua, monstruo, campana, trueno, latido)
+- [x] Sistema de ambientes ambientales: fire, wind, rain, waves, dripping, birds
+- [x] UI dinámica extendida: scene-specific radial gradients, danger glow pulsante con CSS keyframes, scrollbar temática con colores dinámicos, brillo ajustable por luz/tiempo
+- [x] Animaciones de transición entre escenas (fade-out → render nuevo → fade-in con async/await y transitionend)
+
+### Fase 2 — v1.0 (En progreso)
+- [x] Música procedural mejorada: progresiones de acordes por escena (19 escenas), ADSR, LFO vibrato, reverb por convolución
+- [x] Transiciones crossfade de 3s entre pistas con fade-out asíncrono
+- [x] Sincronización TTS con eventos de escena (anuncios automáticos por voz)
+- [x] Modo cinemático: overlay fullscreen con título + ASCII + fade-in/out + música (CinematicMode.show())
+- [x] Efectos visuales GLSL: 4 shaders (fuego, agua, niebla, magia) con WebGL canvas overlay
+- [ ] SoundFont loader: integración con js-synthesizer para eawpats MIDI bank
+
+---
+
 ## 🧪 Testing
 
 | Área | Tests | Estado |
 |------|-------|--------|
 | Backend (pytest) | 45 | Cubre auth, saves, schemas, system_check |
 | Frontend (Node) | 26 | Cubre dados, XP, estado IA |
+| Immersion Engine | **0** | No hay tests para SceneAnalyzer, ThemeManager, ASCIIManager |
 | Characters CRUD | **0** | No existe `test_characters.py` |
 | Game flow (new/action) | **0** | No hay tests de `parse_game_data`, `_apply_game_state`, muerte |
 | Dice service | **0** | No hay tests de `roll_dice`, `calculate_hp`, `roll_stats` |
@@ -38,6 +69,7 @@
 | TTS | **0** | No hay tests de Piper detection ni speech generation |
 | E2E flow | 7 | Selenium test reparado (password2, redirects, login con email) |
 
+- [ ] Crear tests para ImmersionEngine (SceneAnalyzer, ThemeManager, ASCIIManager, AnimationManager)
 - [ ] Crear `test_characters.py` (CRUD)
 - [ ] Crear `test_game.py` (new, action, game_data parser, death)
 - [ ] Crear `test_dice.py` (roll_dice, stat_modifier, calculate_hp)

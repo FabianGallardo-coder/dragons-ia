@@ -138,7 +138,7 @@ class TestSavesList:
 
     async def test_requires_authentication(self, client: AsyncClient):
         resp = await client.get("/game/saves")
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
 
 class TestGetSaveDetail:

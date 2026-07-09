@@ -125,6 +125,7 @@ Cada mundo aplica automaticamente una fuente tipografica tematica durante la ses
 - **Personaje D&D 5e** — stats con Point Buy, HP calculado por clase
 - **Dados interactivos** — d4 a d20, un tiro por turno; critico (Nat 20) y fallo total (Nat 1) con efectos visuales
 - **Narración por voz (TTS)** — Web Speech API + Piper TTS local con fallback automático
+- **Immersion Engine** — motor de novela interactiva con ASCII dinámico, partículas CSS, temas visuales y audio contextual
 - **Arte ASCII dinámico** — escenarios, enemigos y entornos que cambian según la escena
 - **Barra de HP / XP** — actualizacion en tiempo real con colores (verde → amarillo → rojo)
 - **Partidas guardadas** — lista con icono de mundo, nombre del personaje y estado
@@ -163,14 +164,29 @@ dragons-ia/
 │           ├── api.js       # Fetch centralizado + retry + auto-logout
 │           ├── auth.js      # JWT local + expiracion + logout
 │           ├── game.js      # Logica de juego, dados, fuentes, estado IA
-│           └── tts.js       # TTS: Web Speech API + Piper + fallback
+│           ├── tts.js       # TTS: Web Speech API + Piper + fallback
+│           └── immersion/   # Motor de inmersión (novela interactiva)
+│               ├── engine.js           # Orquestador central
+│               ├── scene_analyzer.js    # Analiza SCENE_DATA + regex
+│               ├── theme_manager.js     # CSS variables dinámicas
+│               ├── ascii_manager.js     # Registro ASCII modular (25+ escenas)
+│               ├── animation_manager.js # Partículas CSS (lluvia, nieve, niebla)
+│               ├── audio_manager.js     # Web Audio API (skeleton Fase 1)
+│               └── asset_registry.js    # Registro central de activos
 ├── tests/
-│   ├── conftest.py          # Fixtures: BD en memoria, cliente HTTP, auth
-│   ├── test_schemas.py      # Tests Pydantic (15)
-│   ├── test_auth.py         # Tests endpoints auth (11)
-│   ├── test_saves.py        # Tests partidas + JOIN character (10)
+│   ├── conftest.py              # Fixtures: BD en memoria, cliente HTTP, auth
+│   ├── test_schemas.py          # Tests Pydantic (15)
+│   ├── test_auth.py             # Tests endpoints auth (11)
+│   ├── test_saves.py            # Tests partidas + JOIN character (10)
+│   ├── test_characters.py       # Tests CRUD personajes (18)
+│   ├── test_dice.py             # Tests dados D&D 5e (15)
+│   ├── test_game.py             # Tests flujo de juego (21)
+│   ├── test_dungeon_master.py   # Tests prompts del DM (20)
+│   ├── test_tts.py              # Tests TTS endpoints (6)
+│   ├── test_user_isolation.py   # Tests aislamiento entre usuarios (6)
 │   └── frontend/
-│       └── test_game_logic.js  # Tests logica JS sin dependencias (26)
+│       ├── test_immersion_engine.js  # Tests motor de inmersión (18)
+│       └── test_game_logic.js       # Tests lógica JS (26, legacy)
 ├── scripts/                 # Scripts de inicio y seed
 ├── requirements.txt
 ├── requirements-dev.txt
@@ -239,14 +255,20 @@ pytest -v
 node tests/frontend/test_game_logic.js
 ```
 
-**Estado actual: 62/62 tests pasando**
+**Estado actual: 135/135 tests pasando** (117 backend + 18 frontend)
 
 | Suite | Tests | Descripcion |
 |---|---|---|
 | `test_schemas.py` | 15 | Validacion Pydantic: stats, worlds, game actions |
 | `test_auth.py` | 11 | Registro, login, duplicados, rutas protegidas |
 | `test_saves.py` | 10 | JOIN character→save, aislamiento por usuario |
-| `test_game_logic.js` | 26 | WORLD_FONTS, dados, XP/nivel, estados IA |
+| `test_characters.py` | 18 | CRUD personajes, permisos, aislamiento |
+| `test_dice.py` | 15 | Dados D&D 5e, modificadores, HP, stats |
+| `test_game.py` | 21 | New game, acciones, muerte, parse GAME_DATA/SCENE_DATA |
+| `test_dungeon_master.py` | 20 | Prompts por mundo, SCENE_DATA, tonos, 4 mundos |
+| `test_tts.py` | 6 | Endpoints TTS, status, errores |
+| `test_user_isolation.py` | 6 | Aislamiento total entre usuarios |
+| `test_immersion_engine.js` | 18 | ASCII, partículas, audio, GLSL, temas visuales |
 
 ---
 
@@ -258,15 +280,35 @@ node tests/frontend/test_game_logic.js
 4. Agrega las variables de entorno en el dashboard de Render:
 
 | Variable | Descripcion |
-|---|---|
+|---|---|---|
 | `DATABASE_URL` | URL de PostgreSQL (Render la provee automaticamente) |
 | `JWT_SECRET_KEY` | Clave secreta para firmar tokens (minimo 32 caracteres) |
 | `DEBUG` | `false` en produccion |
 | `OLLAMA_API_BASE` | URL del servidor Ollama (default: `http://localhost:11434`) |
+| `TTS_ENABLED` | Habilitar TTS (`true`/`false`) |
+| `TTS_URL` | URL del servicio Piper TTS (si aplica) |
 
 > ⚠️ **Importante:** Configura `JWT_SECRET_KEY` como variable de entorno fija en Render.
 > Si no esta configurada, cada restart genera tokens incompatibles con los anteriores,
 > causando errores "Token invalido o expirado" al reiniciar el servidor.
+
+---
+
+## Docker Compose
+
+```bash
+# Solo servicios esenciales (sin TTS)
+docker compose up
+
+# Con TTS (Piper)
+docker compose --profile tts up
+
+# Todos los servicios
+docker compose --profile full up
+```
+
+El servicio `piper-tts` usa el perfil `tts` y requiere descargar el modelo de voz.
+Monta el directorio `./piper_voices/` tanto en el contenedor de Piper como en la app.
 
 ---
 
@@ -277,6 +319,20 @@ El juego incluye narración por voz con dos niveles de calidad:
 1. **Web Speech API** (navegador, gratis): Usa las voces del sistema operativo. Compatible con Chrome, Edge, Safari.
 2. **Piper TTS** (mejor calidad): Si `piper-tts` está instalado y el modelo de voz `es_MX-claude-high` está presente, el juego cambia automáticamente a Piper para una narración más natural.
 
+### Configuración (Docker / Local)
+
+| Variable | Default | Descripción |
+|---|---|---|
+| `TTS_ENABLED` | `false` | Habilitar/deshabilitar TTS |
+| `TTS_URL` | (vacío) | URL del servicio Piper HTTP (Docker: `http://piper-tts:5000`) |
+| `TTS_VOICE` | `es_MX/claude/high/es_MX-claude-high` | Modelo de voz a utilizar |
+
+**Modo local:** Piper se ejecuta como subprocess. Requiere `piper-tts` instalado.
+**Modo Docker:** Piper se ejecuta como contenedor separado con `--profile tts`:
+```bash
+docker compose --profile tts up
+```
+
 ### Activar
 - En el juego: botón 🔊 en el footer para activar/desactivar
 - En **Configuración → Narración por Voz**: selector de velocidad y voz
@@ -286,6 +342,39 @@ El juego incluye narración por voz con dos niveles de calidad:
 - `POST /api/tts` — genera audio WAV con Piper (si disponible)
 - Fallback automático: si Piper falla, vuelve a Web Speech API
 - Chrome prewarm: al hacer click en la página, se desbloquea `speechSynthesis`
+
+---
+
+## 🎬 Immersion Engine — Novela interactiva audiovisual
+
+Cada respuesta del Dungeon Master incluye datos estructurados (`SCENE_DATA`) que el frontend usa para construir automáticamente la escena:
+
+```
+ImmersionEngine (Orquestador central)
+├── SceneAnalyzer     — Analiza SCENE_DATA + fallback por regex en la narrativa
+├── ThemeManager      — Aplica colores dinámicos (CSS variables) según entorno y peligro
+├── ASCIIManager      — 25+ escenas modulares con variantes procedurales (10,000+ combinaciones)
+├── AnimationManager  — Partículas CSS ligeras: lluvia, nieve, niebla, brasas, polvo, hojas
+├── AudioManager      — Síntesis Web Audio API para música + SFX (Fase 1)
+└── AssetRegistry     — Catálogo central de todos los assets del engine
+```
+
+**Cómo funciona:**
+1. El prompt del DM (`dungeon_master.py`) instruye a la IA a generar `[SCENE_DATA: scene=cave, weather=none, time=night, danger=tense, ...]`
+2. El backend parsea los datos con `_parse_scene_data()` y los envía en `GameResponse.scene_data`
+3. El frontend `ImmersionEngine.update()` recibe los datos y orquesta todos los subsistemas
+4. `ThemeManager` cambia colores de fondo/borde según el tema (fantasy, horror, infernal, etc.)
+5. `ASCIIManager` muestra arte ASCII específico de la escena con variantes únicas
+6. `AnimationManager` activa partículas según el clima (lluvia, nieve, niebla)
+7. `AudioManager` (Fase 1) reproducirá música ambiental y SFX contextuales
+
+### Plan de implementación
+
+| Fase | Descripción | Estado |
+|---|---|---|
+| **Fase 0 — MVP** | ASCII Registry modular, AnimationManager (partículas CSS), integración ImmersionEngine completa | ✅ Completada |
+| **Fase 1 — Beta** | ASCII por capas (250+ combinaciones), 10 SFX sintetizados vía Web Audio API, UI dinámica extendida | 🔄 Próximo |
+| **Fase 2 — v1.0** | Música ambiental con SoundFont (eawpats), transiciones crossfade, sincronización TTS, modo cinemático | 📅 Futuro |
 
 ---
 

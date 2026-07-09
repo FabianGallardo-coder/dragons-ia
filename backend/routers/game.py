@@ -54,24 +54,62 @@ _GAME_DATA_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Regex para parsear la línea [SCENE_DATA: ...] del narrative
+_SCENE_DATA_RE = re.compile(
+    r"\[SCENE_DATA:\s*([^\]]+)\]",
+    re.IGNORECASE,
+)
 
-def _parse_game_data(narrative: str) -> tuple[str, int, int, bool]:
-    """Extrae datos de juego del narrative y los limpia.
+
+def _parse_scene_data(narrative: str) -> dict | None:
+    """Extrae datos de escena del narrative.
 
     Returns:
-        (narrative_limpio, hp_change, xp_gain, alive)
+        Diccionario con los campos de escena, o None si no se encontró.
     """
+    match = _SCENE_DATA_RE.search(narrative)
+    if not match:
+        return None
+
+    raw = match.group(1)
+    scene_data = {}
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if "=" in pair:
+            key, value = pair.split("=", 1)
+            key = key.strip().lower()
+            value = value.strip().lower()
+            # El campo ambience puede tener múltiples valores separados por ;
+            if key == "ambience" and ";" in value:
+                scene_data[key] = [v.strip() for v in value.split(";")]
+            else:
+                scene_data[key] = value
+    return scene_data if scene_data else None
+
+
+def _parse_game_data(narrative: str) -> tuple[str, int, int, bool, dict | None]:
+    """Extrae datos de juego y escena del narrative y los limpia.
+
+    Returns:
+        (narrative_limpio, hp_change, xp_gain, alive, scene_data)
+    """
+    # Parsear scene_data antes de limpiar
+    scene_data = _parse_scene_data(narrative)
+
     match = _GAME_DATA_RE.search(narrative)
     if not match:
-        return narrative, 0, 0, True
+        # Aún así limpiar SCENE_DATA si existe
+        clean = _SCENE_DATA_RE.sub("", narrative).rstrip()
+        return clean, 0, 0, True, scene_data
 
     hp_change = int(match.group(1))
     xp_gain = int(match.group(2))
     alive = match.group(3).lower() == "true"
 
-    # Remover la línea GAME_DATA del texto visible
-    clean_narrative = narrative[: match.start()].rstrip()
-    return clean_narrative, hp_change, xp_gain, alive
+    # Remover ambas líneas de datos del texto visible
+    clean_narrative = _SCENE_DATA_RE.sub("", narrative)
+    clean_narrative = _GAME_DATA_RE.sub("", clean_narrative).rstrip()
+    return clean_narrative, hp_change, xp_gain, alive, scene_data
 
 
 def _apply_game_state(character: Character, hp_change: int, xp_gain: int, alive: bool) -> None:
@@ -156,14 +194,18 @@ async def new_game(
     await db.flush()
     await db.refresh(save)
 
+    # Parsear scene_data de la escena de apertura
+    clean_narrative, _, _, _, scene_data = _parse_game_data(narrative)
+
     return GameResponse(
-        narrative=narrative,
+        narrative=clean_narrative,
         save_id=save.id,
         turn_count=save.turn_count,
         character_hp=character.hp_current,
         character_hp_max=character.hp_max,
         character_alive=character.is_alive,
         character_xp=character.experience,
+        scene_data=scene_data,
     )
 
 
@@ -230,8 +272,8 @@ async def game_action(
     except RuntimeError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 
-    # Parsear datos de juego y limpiar el narrative
-    narrative, hp_change, xp_gain, alive = _parse_game_data(raw_narrative)
+    # Parsear datos de juego, escena y limpiar el narrative
+    narrative, hp_change, xp_gain, alive, scene_data = _parse_game_data(raw_narrative)
 
     # Actualizar estado del personaje
     _apply_game_state(character, hp_change, xp_gain, alive)
@@ -261,6 +303,7 @@ async def game_action(
         character_hp_max=character.hp_max,
         character_alive=character.is_alive,
         character_xp=character.experience,
+        scene_data=scene_data,
     )
 
 

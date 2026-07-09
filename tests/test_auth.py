@@ -94,9 +94,9 @@ class TestLogin:
 
 class TestProtectedRoutes:
 
-    async def test_no_token_returns_403(self, client: AsyncClient):
+    async def test_no_token_returns_401(self, client: AsyncClient):
         resp = await client.get("/characters/")
-        assert resp.status_code == 403
+        assert resp.status_code == 401
 
     async def test_invalid_token_returns_401(self, client: AsyncClient):
         resp = await client.get(

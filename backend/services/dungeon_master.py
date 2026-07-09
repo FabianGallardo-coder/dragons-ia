@@ -105,7 +105,9 @@ REGLAS DE NARRACIÓN:
 {tone_block}
 
 IMPORTANTE — DATOS DE JUEGO:
-Al FINAL de cada respuesta, SIEMPRE incluí una línea con datos del turno en este formato exacto:
+Al FINAL de cada respuesta, SIEMPRE incluí DOS líneas de datos en este formato exacto:
+
+LÍNEA 1 — Estado del personaje:
 [GAME_DATA: hp_change=X, xp_gain=Y, alive=true/false]
 
 Donde:
@@ -117,5 +119,34 @@ Ejemplo si recibe 5 de daño y gana 10 XP: [GAME_DATA: hp_change=-5, xp_gain=10,
 Ejemplo si es curado: [GAME_DATA: hp_change=8, xp_gain=0, alive=true]
 Ejemplo si muere: [GAME_DATA: hp_change=-15, xp_gain=0, alive=false]
 Si no pasa nada relevante: [GAME_DATA: hp_change=0, xp_gain=0, alive=true]
+
+LÍNEA 2 — Datos de escena (para ambientación visual y sonora):
+[SCENE_DATA: scene=X, weather=X, time=X, danger=X, theme=X, light=X, music=X, ambience=X, sfx=X, ascii=X]
+
+Valores posibles para cada campo:
+- scene: tavern, cave, forest, dungeon, castle, village, city, library, mountain, river, desert, swamp, ruins, temple, ship, camp, throne_room, market, arena, graveyard, tower, beach, volcano, ice_cave, underground
+- weather: none, rain, snow, storm, fog, wind, hail, sandstorm, clear
+- time: dawn, day, sunset, night, midnight
+- danger: peaceful, tense, combat, boss, death
+- theme: fantasy, horror, royal, infernal, ruins, nature, holy, arcane, mechanical, underwater
+- light: sunlight, moonlight, torch, magic, fireplace, darkness, candlelight, bioluminescence, starlight, lava
+- music: tavern, forest, dungeon, battle, boss, castle, village, mystery, epic, sad, peaceful, tension, adventure
+- ambience: wind;birds, rain;thunder, dripping;chains, fire;crackling, crowd;laughter, silence, waves;seagulls, insects;frogs, machinery;steam (separar múltiples con ;)
+- sfx: none, sword, magic, door, footsteps, monster, thunder, explosion, glass, scream, roar, splash, bell, howl
+- ascii: tavern, cave, forest, dungeon, castle, village, dragon, library, mountain, campfire, ship, throne, market, graveyard, tower, ruins, temple, arena, volcano
+
+Ejemplo completo de ambas líneas:
+[GAME_DATA: hp_change=-3, xp_gain=15, alive=true]
+[SCENE_DATA: scene=cave, weather=none, time=night, danger=tense, theme=horror, light=torch, music=dungeon, ambience=dripping;chains, sfx=footsteps, ascii=cave]
+
+Ejemplo en una taberna pacífica:
+[GAME_DATA: hp_change=0, xp_gain=5, alive=true]
+[SCENE_DATA: scene=tavern, weather=rain, time=night, danger=peaceful, theme=fantasy, light=fireplace, music=tavern, ambience=rain;fire;crackling, sfx=none, ascii=tavern]
+
+REGLAS IMPORTANTES SOBRE SCENE_DATA:
+- SIEMPRE incluí ambas líneas (GAME_DATA y SCENE_DATA) al final de cada respuesta
+- Los valores deben ser EXACTAMENTE de las listas anteriores (en inglés, minúsculas)
+- Si no estás seguro de un valor, usá el más cercano de la lista
+- El campo ascii debe coincidir con la ubicación actual del personaje
 
 Comenzá la aventura con una escena de apertura inmersiva."""

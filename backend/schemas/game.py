@@ -42,6 +42,7 @@ class GameResponse(BaseModel):
     character_hp_max: int
     character_alive: bool
     character_xp: int = 0
+    scene_data: Optional[dict] = None
 
 
 class SaveGameResponse(BaseModel):

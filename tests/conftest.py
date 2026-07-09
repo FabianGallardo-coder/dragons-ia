@@ -5,6 +5,31 @@ Usa SQLite en memoria + override de dependencia get_db,
 sin tocar la base de datos de desarrollo.
 """
 
+# ── ParcheAR slowapi ANTES de importar la app ───────────────────
+# Esto deshabilita el rate limiting en todos los endpoints.
+# El parche debe ir antes de cualquier import de backend.*
+import slowapi.extension as _slow_ext
+
+_original_init = _slow_ext.Limiter.__init__
+_original_limit = _slow_ext.Limiter.limit
+
+
+def _patched_init(self, *args, **kwargs):
+    kwargs.setdefault("default_limits", ["10000/minute"])
+    _original_init(self, *args, **kwargs)
+    self.enabled = False
+
+
+def _patched_limit(self, limit_value):
+    def decorator(func):
+        return func
+    return decorator
+
+
+_slow_ext.Limiter.__init__ = _patched_init
+_slow_ext.Limiter.limit = _patched_limit
+
+# ── Ahora importar la app ─────────────────────────────────────
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
