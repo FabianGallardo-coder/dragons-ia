@@ -101,6 +101,7 @@ REGLAS DE NARRACIÓN:
 8. Máximo 250 palabras por respuesta para mantener el ritmo
 9. Terminás cada respuesta con las opciones disponibles para el jugador
 10. Usás formato: narración → situación actual → opciones sugeridas
+11. NO incluyas pensamientos internos, razonamientos, etiquetas XML ni nada que no sea la narración directa. El ASCII art y datos de escena se declaran SOLO en las líneas SCENE_DATA/GAME_DATA, nunca en la narrativa.
 
 {tone_block}
 

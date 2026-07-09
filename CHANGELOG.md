@@ -12,17 +12,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests de backend: characters (CRUD, 18), dice (15), game (21), dungeon_master (20), tts (6), user_isolation (6)
 - Tests de frontend: 18 tests de inmersión visual (ASCII, partículas, audio, GLSL, temas)
 - Rate limiter deshabilitado automáticamente en tests mediante monkey-patch de slowapi
+- **TTS filtering en 5 capas**: backend regex flexible (`_GAME_DATA_STRIP_RE`, `_THINKING_BLOCK_RE`, `_THINKING_BRACKET_RE`, `_METADATA_LINE_RE`), campo `narrative_tts` en `GameResponse`, frontend `_cleanText()` mejorado (HTML, code blocks, URLs), y regla 11 en system prompt del DM
+- **SoundFontLoader integrado**: `AudioManager.init()` carga `SoundFontLoader.load()`, `_playMusicLoop()` usa `SoundFontLoader.playChord(track)`, música ambiental con instrumentos MIDI (eawpats)
+- **Nuevo `piper_server/`**: servidor HTTP propio para Piper TTS con endpoints `/health` y `/synthesize`, Dockerfile independiente
+- **Nuevos tests de parseo TTS**: 8 tests para `_clean_for_tts()` (flexible order, whitespace, metadata stripping, thinking tags)
 
 ### Changed
 - `docker-compose.yml`: Piper como servicio opcional (profile `tts`/`full`), healthcheck en app
 - `backend/services/tts_service.py`: refactor completo con soporte HTTP (`TTS_URL`) + subprocess
+- `backend/routers/game.py`: nueva función `_clean_for_tts()`, campo `narrative_tts` en respuestas, regex ampliado
+- `backend/schemas/game.py`: agregado `narrative_tts: Optional[str]` a `GameResponse`
+- `backend/services/dungeon_master.py`: regla 11 en system prohíbe thinking tags y ASCII en narrativa
+- `frontend/static/js/game.js`: `addDMMessage(text, ttsText)` prioriza `narrative_tts`
+- `frontend/static/js/tts.js`: `_cleanText()` mejorado con filtros adicionales
+- `frontend/static/js/immersion/audio_manager.js`: integración SoundFontLoader en `init()` y `_playMusicLoop()`
 - `tests/conftest.py`: deshabilitado rate limiting para tests vía monkey-patch temprano de slowapi
 - `.env.example`: nuevas vars `TTS_ENABLED`, `TTS_URL`, `TTS_VOICE`
+- **Dockerfile**: actualizado a Python 3.12-slim, removidas dependencias MySQL, agregado `PYTHONUNBUFFERED=1`, corregido permiso `/app` para SQLite con usuario no-root
+- **docker-compose.yml**: piper-tts ahora build desde `./piper_server` (ya no usa imagen externa)
+- **`.dockerignore`**: agregado `piper_server/`
 
 ### Fixed
 - Tests de autenticación: status code corregido de 403→401 (coincide con la implementación real)
 - Tests de saves: status code corregido de 403→401
 - Tests de dice: stat modifier corregido (stat 1 → -5 según D&D 5e)
+- **TTS ya no lee metadata/GAME_DATA/SCENE_DATA/pensamientos del modelo**
+- **SQLite en Docker**: `/app` ahora tiene permisos correctos para usuario no-root
 
 ### Removed
 - Directorios vacíos `worktrees/` y `.claude/worktrees/`

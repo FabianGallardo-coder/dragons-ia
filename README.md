@@ -13,7 +13,7 @@ Soporta múltiples modelos de IA: Anthropic (Claude), Ollama Cloud y modelos loc
 
 | Capa | Tecnología |
 |---|---|
-| Backend | Python 3.11+ / FastAPI |
+| Backend | Python 3.12+ / FastAPI |
 | Base de datos | PostgreSQL (prod) / SQLite (dev) |
 | ORM | SQLAlchemy 2.0 async |
 | Migraciones | Alembic |
@@ -173,6 +173,9 @@ dragons-ia/
 │               ├── animation_manager.js # Partículas CSS (lluvia, nieve, niebla)
 │               ├── audio_manager.js     # Web Audio API (skeleton Fase 1)
 │               └── asset_registry.js    # Registro central de activos
+├── piper_server/
+│   ├── main.py           # Servidor HTTP para Piper TTS (/health, /synthesize)
+│   └── Dockerfile        # Build independiente para piper-tts
 ├── tests/
 │   ├── conftest.py              # Fixtures: BD en memoria, cliente HTTP, auth
 │   ├── test_schemas.py          # Tests Pydantic (15)
@@ -255,19 +258,21 @@ pytest -v
 node tests/frontend/test_game_logic.js
 ```
 
-**Estado actual: 135/135 tests pasando** (117 backend + 18 frontend)
+**Estado actual: 141/141 tests pasando** (123 backend + 18 frontend)
 
 | Suite | Tests | Descripcion |
 |---|---|---|
 | `test_schemas.py` | 15 | Validacion Pydantic: stats, worlds, game actions |
 | `test_auth.py` | 11 | Registro, login, duplicados, rutas protegidas |
 | `test_saves.py` | 10 | JOIN character→save, aislamiento por usuario |
-| `test_characters.py` | 18 | CRUD personajes, permisos, aislamiento |
-| `test_dice.py` | 15 | Dados D&D 5e, modificadores, HP, stats |
-| `test_game.py` | 21 | New game, acciones, muerte, parse GAME_DATA/SCENE_DATA |
+| `test_characters.py` | 10 | CRUD personajes, permisos, aislamiento |
+| `test_dice.py` | 16 | Dados D&D 5e, modificadores, HP, stats |
+| `test_game.py` | 19 | New game, acciones, muerte, parse GAME_DATA/SCENE_DATA, narrative_tts |
 | `test_dungeon_master.py` | 20 | Prompts por mundo, SCENE_DATA, tonos, 4 mundos |
 | `test_tts.py` | 6 | Endpoints TTS, status, errores |
-| `test_user_isolation.py` | 6 | Aislamiento total entre usuarios |
+| `test_user_isolation.py` | 4 | Aislamiento total entre usuarios |
+| `test_ai_service.py` | 3 | Fallback de modelos, deteccion Ollama |
+| `test_system_check.py` | 6 | Diagnostico SO, RAM, modelos recomendados |
 | `test_immersion_engine.js` | 18 | ASCII, partículas, audio, GLSL, temas visuales |
 
 ---
@@ -307,8 +312,8 @@ docker compose --profile tts up
 docker compose --profile full up
 ```
 
-El servicio `piper-tts` usa el perfil `tts` y requiere descargar el modelo de voz.
-Monta el directorio `./piper_voices/` tanto en el contenedor de Piper como en la app.
+El servicio `piper-tts` usa el perfil `tts` y build desde `./piper_server/` (servidor HTTP propio).
+Requiere descargar el modelo de voz y monta `./piper_voices/` tanto en el contenedor de Piper como en la app.
 
 ---
 
@@ -342,6 +347,7 @@ docker compose --profile tts up
 - `POST /api/tts` — genera audio WAV con Piper (si disponible)
 - Fallback automático: si Piper falla, vuelve a Web Speech API
 - Chrome prewarm: al hacer click en la página, se desbloquea `speechSynthesis`
+- **Filtrado inteligente**: el campo `narrative_tts` en las respuestas del backend elimina automáticamente metadatos (`GAME_DATA`, `SCENE_DATA`), thinking tags del modelo, URLs, markdown y ASCII art antes de enviarlo al TTS
 
 ---
 
@@ -373,8 +379,8 @@ ImmersionEngine (Orquestador central)
 | Fase | Descripción | Estado |
 |---|---|---|
 | **Fase 0 — MVP** | ASCII Registry modular, AnimationManager (partículas CSS), integración ImmersionEngine completa | ✅ Completada |
-| **Fase 1 — Beta** | ASCII por capas (250+ combinaciones), 10 SFX sintetizados vía Web Audio API, UI dinámica extendida | 🔄 Próximo |
-| **Fase 2 — v1.0** | Música ambiental con SoundFont (eawpats), transiciones crossfade, sincronización TTS, modo cinemático | 📅 Futuro |
+| **Fase 1 — Beta** | ASCII por capas (250+ combinaciones), 10 SFX sintetizados vía Web Audio API, UI dinámica extendida | ✅ Completada |
+| **Fase 2 — v1.0** | Música ambiental con SoundFont (eawpats), transiciones crossfade, sincronización TTS, modo cinemático | 🔄 Parcial (SoundFont integrado, cinemático pendiente) |
 
 ---
 

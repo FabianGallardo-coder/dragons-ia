@@ -40,6 +40,9 @@ const AudioManager = {
     init() {
         if (this._initialized) return;
         this._initialized = true;
+        if (window.SoundFontLoader) {
+            SoundFontLoader.load().catch(() => {});
+        }
     },
 
     async _ensureContext() {
@@ -233,6 +236,9 @@ const AudioManager = {
     },
 
     _playMusicLoop(track) {
+        if (window.SoundFontLoader?.isLoaded()) {
+            SoundFontLoader.playChord(track);
+        }
         const chords = this.SCENE_CHORDS[track] || this.SCENE_CHORDS.adventure;
         const ctx = this._audioCtx;
         const bpm = chords.rate * 2;

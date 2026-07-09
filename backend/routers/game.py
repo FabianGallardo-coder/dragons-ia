@@ -54,10 +54,34 @@ _GAME_DATA_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Regex flexible para remover [GAME_DATA: ...] sin importar orden de campos
+_GAME_DATA_STRIP_RE = re.compile(
+    r"\[GAME_DATA:[^\]]*\]",
+    re.IGNORECASE,
+)
+
 # Regex para parsear la línea [SCENE_DATA: ...] del narrative
 _SCENE_DATA_RE = re.compile(
     r"\[SCENE_DATA:\s*([^\]]+)\]",
     re.IGNORECASE,
+)
+
+# Regex para remover bloques de pensamiento/razonamiento del modelo
+_THINKING_BLOCK_RE = re.compile(
+    r"<(thinking|reasoning)[^>]*>.*?</\1>",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Regex para remover bloques con sintaxis de corchetes
+_THINKING_BRACKET_RE = re.compile(
+    r"\[(reasoning|INST|thought|assistant)\].*?\[/\1\]",
+    re.IGNORECASE | re.DOTALL,
+)
+
+# Catch-all: cualquier línea que parezca metadata [PALABRA: ...]
+_METADATA_LINE_RE = re.compile(
+    r"^\[[A-Z_]+:.*\]$",
+    re.IGNORECASE | re.MULTILINE,
 )
 
 
@@ -87,29 +111,51 @@ def _parse_scene_data(narrative: str) -> dict | None:
     return scene_data if scene_data else None
 
 
-def _parse_game_data(narrative: str) -> tuple[str, int, int, bool, dict | None]:
+def _clean_for_tts(text: str) -> str:
+    """Limpia texto narrativo para ser leído por TTS."""
+    text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.*?)\*", r"\1", text)
+    text = re.sub(r"```[\s\S]*?```", "", text)
+    text = re.sub(r">\s*", "", text)
+    text = re.sub(r"https?://\S+", "", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()[:2000]
+
+
+def _parse_game_data(narrative: str) -> tuple[str, str, int, int, bool, dict | None]:
     """Extrae datos de juego y escena del narrative y los limpia.
 
     Returns:
-        (narrative_limpio, hp_change, xp_gain, alive, scene_data)
+        (narrative_limpio, narrative_tts, hp_change, xp_gain, alive, scene_data)
     """
-    # Parsear scene_data antes de limpiar
     scene_data = _parse_scene_data(narrative)
 
     match = _GAME_DATA_RE.search(narrative)
     if not match:
-        # Aún así limpiar SCENE_DATA si existe
-        clean = _SCENE_DATA_RE.sub("", narrative).rstrip()
-        return clean, 0, 0, True, scene_data
+        hp_change, xp_gain, alive = 0, 0, True
+    else:
+        hp_change = int(match.group(1))
+        xp_gain = int(match.group(2))
+        alive = match.group(3).lower() == "true"
 
-    hp_change = int(match.group(1))
-    xp_gain = int(match.group(2))
-    alive = match.group(3).lower() == "true"
+    clean = narrative
 
-    # Remover ambas líneas de datos del texto visible
-    clean_narrative = _SCENE_DATA_RE.sub("", narrative)
-    clean_narrative = _GAME_DATA_RE.sub("", clean_narrative).rstrip()
-    return clean_narrative, hp_change, xp_gain, alive, scene_data
+    # 1) Remover líneas GAME_DATA (estricta + flexible) y SCENE_DATA
+    clean = _GAME_DATA_RE.sub("", clean)
+    clean = _GAME_DATA_STRIP_RE.sub("", clean)
+    clean = _SCENE_DATA_RE.sub("", clean)
+
+    # 2) Remover bloques de pensamiento/razonamiento del modelo
+    clean = _THINKING_BLOCK_RE.sub("", clean)
+    clean = _THINKING_BRACKET_RE.sub("", clean)
+
+    # 3) Remover cualquier otra línea de metadata [PALABRA: ...]
+    clean = _METADATA_LINE_RE.sub("", clean)
+
+    clean = clean.rstrip()
+    narrative_tts = _clean_for_tts(clean)
+
+    return clean, narrative_tts, hp_change, xp_gain, alive, scene_data
 
 
 def _apply_game_state(character: Character, hp_change: int, xp_gain: int, alive: bool) -> None:
@@ -195,10 +241,11 @@ async def new_game(
     await db.refresh(save)
 
     # Parsear scene_data de la escena de apertura
-    clean_narrative, _, _, _, scene_data = _parse_game_data(narrative)
+    clean_narrative, narrative_tts, _, _, _, scene_data = _parse_game_data(narrative)
 
     return GameResponse(
         narrative=clean_narrative,
+        narrative_tts=narrative_tts,
         save_id=save.id,
         turn_count=save.turn_count,
         character_hp=character.hp_current,
@@ -273,7 +320,7 @@ async def game_action(
         raise HTTPException(status_code=502, detail=str(exc))
 
     # Parsear datos de juego, escena y limpiar el narrative
-    narrative, hp_change, xp_gain, alive, scene_data = _parse_game_data(raw_narrative)
+    narrative, narrative_tts, hp_change, xp_gain, alive, scene_data = _parse_game_data(raw_narrative)
 
     # Actualizar estado del personaje
     _apply_game_state(character, hp_change, xp_gain, alive)
@@ -297,6 +344,7 @@ async def game_action(
 
     return GameResponse(
         narrative=narrative,
+        narrative_tts=narrative_tts,
         save_id=save.id,
         turn_count=save.turn_count,
         character_hp=character.hp_current,

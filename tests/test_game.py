@@ -141,3 +141,43 @@ class TestParseGameData:
         raw = match.group(1)
         pairs = dict(p.strip().split("=", 1) for p in raw.split(","))
         assert "crowd;laughter;fire" in pairs["ambience"]
+
+    def test_game_data_flexible_order(self):
+        """GAME_DATA con campos en orden inverso debe parsearse igual."""
+        text = "[GAME_DATA: alive=true, xp_gain=15, hp_change=-5]"
+        strict = _GAME_DATA_RE.search(text)
+        assert strict is None, "El regex estricto NO debe matchear orden inverso"
+        flexible = re.compile(r"\[GAME_DATA:[^\]]*\]", re.IGNORECASE).search(text)
+        assert flexible is not None
+
+    def test_game_data_extra_whitespace(self):
+        """GAME_DATA con espacios extra debe ser removido por regex flexible."""
+        text = "Narrativa. [GAME_DATA:  hp_change  =  -3 ,  xp_gain  =  10 ,  alive  =  true ]"
+        flexible = re.compile(r"\[GAME_DATA:[^\]]*\]", re.IGNORECASE)
+        clean = flexible.sub("", text).rstrip()
+        assert clean == "Narrativa."
+
+
+class TestNarrativeTTS:
+
+    def test_narrative_tts_strips_bold(self):
+        from backend.routers.game import _clean_for_tts
+        result = _clean_for_tts("**Hola** mundo")
+        assert "Hola" in result
+        assert "**" not in result
+
+    def test_narrative_tts_strips_urls(self):
+        from backend.routers.game import _clean_for_tts
+        result = _clean_for_tts("Visita https://example.com ahora")
+        assert "https" not in result
+
+    def test_narrative_tts_strips_code_blocks(self):
+        from backend.routers.game import _clean_for_tts
+        result = _clean_for_tts("Texto ```código``` sigue")
+        assert "código" not in result
+
+    def test_narrative_tts_truncates(self):
+        from backend.routers.game import _clean_for_tts
+        largo = "x " * 3000
+        result = _clean_for_tts(largo)
+        assert len(result) <= 2000

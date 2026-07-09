@@ -18,16 +18,17 @@ services:
     restart: unless-stopped
 
   piper-tts:
-    image: rhasspy/piper:latest
+    build:
+      context: ./piper_server
     container_name: dragons-ia-piper
     platform: linux/amd64
-    entrypoint: ["piper"]
-    command: ["--help"]
     profiles:
       - tts
       - full
     volumes:
-      - ./piper_voices:/voices:ro
+      - ./backend/piper_voices:/voices:ro
+    environment:
+      - TTS_VOICE=es_MX/claude/high/es_MX-claude-high
     restart: unless-stopped
 
   app:

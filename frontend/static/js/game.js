@@ -126,7 +126,7 @@ async function handleAction(e) {
         });
 
         // Mostrar respuesta del DM
-        addDMMessage(response.narrative);
+        addDMMessage(response.narrative, response.narrative_tts);
 
         // Actualizar UI
         updateHP(response.character_hp, response.character_hp_max);
@@ -227,7 +227,7 @@ function renderHistory(history) {
 /**
  * Agrega un mensaje del DM al log con formato de párrafos.
  */
-function addDMMessage(text) {
+function addDMMessage(text, ttsText) {
     const container = document.getElementById('narrative-container');
     const div = document.createElement('div');
     div.className = 'message-dm';
@@ -252,7 +252,7 @@ function addDMMessage(text) {
     container.appendChild(div);
     scrollToBottom();
 
-    if (typeof TTS !== 'undefined') TTS.speak(text);
+    if (typeof TTS !== 'undefined') TTS.speak(ttsText || text);
 }
 
 /**

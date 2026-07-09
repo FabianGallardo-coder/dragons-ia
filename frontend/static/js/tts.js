@@ -119,6 +119,9 @@ const TTS = {
 
   _cleanText(text) {
     return text
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/```[\s\S]*?```/g, ' ')
+      .replace(/https?:\/\/\S+/g, ' ')
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
       .replace(/[#*_~`>\-\[\]()!]/g, ' ')

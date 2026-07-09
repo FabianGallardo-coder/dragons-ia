@@ -36,6 +36,7 @@ class HistoryEntry(BaseModel):
 class GameResponse(BaseModel):
     """Respuesta del DM a una acción."""
     narrative: str
+    narrative_tts: Optional[str] = None
     save_id: str
     turn_count: int
     character_hp: int
