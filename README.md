@@ -384,6 +384,37 @@ ImmersionEngine (Orquestador central)
 
 ---
 
+## Roadmap — Próximos Pasos (Game Dev)
+
+### 🔴 Prioridad Alta (Core Mecánico)
+
+| Sistema | Descripción | Estado |
+|---|---|---|
+| **Motor de Combate** | Initiative / Attack Roll vs AC / Damage formulas / Monster stats (HP, AC, daño, loot) / El AI narra sobre resultados reales | 📅 Mañana |
+| **Sistema de Inventario** | DB de items / Equipment slots (arma, armadura, anillo) / Oro / Loot / Item use (pociones) / Weight | 📅 Mañana |
+| **Sistema de Progresión** | Level-ups reales: aumento de HP, nuevas habilidades / Talents / Perks / Skills D&D 5e (Stealth, Perception...) | 📅 Mañana |
+| **Sistema de Quests** | Quest log / Objetivos activos / Eventos de completado / Recompensas estructuradas | 📅 Mañana |
+| **NPCs con Estado** | Persistencia de NPCs / Facciones / Reputación / Companions / Shops | 📅 Mañana |
+
+### 🟡 Prioridad Media
+
+| Sistema | Descripción | Estado |
+|---|---|---|
+| **Sistema de Magia** | Lista de hechizos / Mana / Spell slots / Grimorio | 📅 Mañana |
+| **Mapa / Locaciones** | World map / Lugares descubiertos persistentes / Travel mechanics / Encuentros aleatorios | 📅 Mañana |
+| **Muerte y Resurrección** | Death saves (D&D 5e) / Resurrección / Consecuencias parciales | 📅 Mañana |
+
+### 🟢 Prioridad Baja (Polish)
+
+| Sistema | Descripción | Estado |
+|---|---|---|
+| **Character Portrait** | Sprite / Avatar del personaje | 📅 Mañana |
+| **Animaciones de Combate** | Efectos visuales al atacar/recibir daño | 📅 Mañana |
+| **Tutorial / Onboarding** | Guía interactiva para nuevos jugadores | 📅 Mañana |
+| **Settings Persistence** | Volumen música/SFX, velocidad de texto, preferencias | 📅 Mañana |
+
+---
+
 ## Licencia
 
 Proyecto personal — Todos los derechos reservados.
