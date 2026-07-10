@@ -42,3 +42,6 @@ class Character(Base):
     # Relaciones
     user = relationship("User", back_populates="characters")
     save_games = relationship("SaveGame", back_populates="character", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        return f"<Character {self.name} ({self.character_class}, {self.world})>"

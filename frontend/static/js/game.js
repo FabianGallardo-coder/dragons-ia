@@ -138,6 +138,17 @@ async function handleAction(e) {
 
         setAIStatus('ok');
 
+        // Audio immersion triggers
+        if (window.AudioManager) {
+            try {
+                if (!response.character_alive) {
+                    AudioManager.trigger('death');
+                } else if (response.character_hp < response.character_hp_max) {
+                    AudioManager.trigger('hit');
+                }
+            } catch (e) { /* silent */ }
+        }
+
         if (window.ImmersionEngine) {
             try {
                 window.ImmersionEngine.update(response);
@@ -322,14 +333,22 @@ function updateHP(current, max) {
 function updateXP(xp) {
     const display = document.getElementById('xp-display');
     if (!display) return;
-    // XP para subir de nivel: nivel * 100 (simplificado)
-    const level = Math.floor(xp / 100) + 1;
-    const xpInLevel = xp % 100;
-    display.textContent = `⭐ Nv.${level} — XP ${xpInLevel}/100`;
+    // D&D 5e XP thresholds: 0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000
+    const XP_THRESHOLDS = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000];
+    let level = 1;
+    for (let i = 1; i < XP_THRESHOLDS.length; i++) {
+        if (xp >= XP_THRESHOLDS[i]) level = i + 1;
+        else break;
+    }
+    const currentThreshold = XP_THRESHOLDS[level - 1] || 0;
+    const nextThreshold = XP_THRESHOLDS[level] || XP_THRESHOLDS[XP_THRESHOLDS.length - 1] + 20000;
+    const xpInLevel = xp - currentThreshold;
+    const xpNeeded = nextThreshold - currentThreshold;
+    display.textContent = `⭐ Nv.${level} — XP ${xpInLevel}/${xpNeeded}`;
 
     const bar = document.getElementById('xp-bar');
     if (bar) {
-        bar.style.width = `${xpInLevel}%`;
+        bar.style.width = `${Math.min(100, (xpInLevel / xpNeeded) * 100)}%`;
     }
 }
 

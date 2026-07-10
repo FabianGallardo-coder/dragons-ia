@@ -38,3 +38,6 @@ class SaveGame(Base):
     # Relaciones
     user = relationship("User", back_populates="save_games")
     character = relationship("Character", back_populates="save_games")
+
+    def __repr__(self) -> str:
+        return f"<SaveGame '{self.title}' turn={self.turn_count} active={self.is_active}>"

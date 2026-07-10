@@ -206,11 +206,7 @@
         // Function to check Ollama status and display message
         async function checkOllamaStatus() {
             try {
-                const response = await fetch('/api/system/ollama-status');
-                if (!response.ok) {
-                    throw new Error('Error al consultar el estado de Ollama');
-                }
-                const status = await response.json();
+                const status = await apiGet('/api/system/ollama-status');
                 
                 const messageDiv = document.getElementById('ollama-status-message');
                 messageDiv.classList.remove('hidden');
@@ -291,9 +287,7 @@
             if (provider === 'ollama_local') {
                 select.innerHTML = '<option value="">⏳ Cargando modelos...</option>';
                 try {
-                    const resp = await fetch('/game/ollama/models');
-                    if (!resp.ok) throw new Error('No se pudo conectar a Ollama');
-                    const models = await resp.json();
+                    const models = await apiGet('/game/ollama/models');
                     MODELS.ollama_local = models;
                     select.innerHTML = '';
                     if (models.length === 0) {
@@ -339,16 +333,7 @@
             const select = document.getElementById('ai-model');
             select.innerHTML = '<option value="">⏳ Cargando modelos desde Ollama Cloud...</option>';
             try {
-                const resp = await fetch('/game/ollama/models/cloud', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ api_key: apiKey }),
-                });
-                if (!resp.ok) {
-                    const err = await resp.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Error al cargar modelos');
-                }
-                const models = await resp.json();
+                const models = await apiPost('/game/ollama/models/cloud', { api_key: apiKey });
                 MODELS.ollama_cloud = models;
                 select.innerHTML = '';
                 if (models.length === 0) {
@@ -361,7 +346,6 @@
                         opt.textContent = m.label;
                         select.appendChild(opt);
                     });
-                    // Seleccionar el primer modelo por defecto
                     if (select.options.length > 0) select.selectedIndex = 0;
                 }
                 showMsg(models.length + ' modelos cargados desde Ollama Cloud', 'green');

@@ -27,3 +27,6 @@ class ResetToken(Base):
     )
 
     user = relationship("User", backref="reset_tokens")
+
+    def __repr__(self) -> str:
+        return f"<ResetToken user={self.user_id} used={self.used}>"

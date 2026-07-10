@@ -38,7 +38,7 @@ from backend.database import Base, get_db
 from backend.main import app
 
 # ── Base de datos exclusiva para tests ──────────────────────────
-TEST_DB_URL = "sqlite+aiosqlite:///./test_dragons_tmp.db"
+TEST_DB_URL = "sqlite+aiosqlite://"
 
 test_engine = create_async_engine(
     TEST_DB_URL,
