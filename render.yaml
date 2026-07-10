@@ -19,11 +19,16 @@ services:
       - key: DEBUG
         value: "false"
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.12"
+      - key: TTS_ENABLED
+        value: "false"
 
 databases:
   - name: dragons-ia-db
     region: oregon
     plan: free
     databaseName: dragons_ia
-    ipAllowList: []
+    ipAllowList:
+      - name: "render-internal"
+        cidr: "0.0.0.0/0"
+        description: "Render internal access"

@@ -78,6 +78,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         scrollToBottom();
         setAIStatus('ok');
 
+        // Cinematic intro for new games (turn 1)
+        if (save.turn_count <= 1 && window.CinematicMode) {
+            try {
+                CinematicMode.show({ scene: character.world === 'ciencia_ficcion' ? 'spaceship' : 'tavern', cinematic_title: save.title }, 4);
+            } catch (e) { /* silent */ }
+        }
+
         if (window.ImmersionEngine) {
             try {
                 window.ImmersionEngine.update({ narrative: 'Nueva aventura', character_alive: true, scene_data: { scene: 'tavern' } });
@@ -146,6 +153,12 @@ async function handleAction(e) {
                 } else if (response.character_hp < response.character_hp_max) {
                     AudioManager.trigger('hit');
                 }
+                if (response.character_xp > 0 && response.scene_data && response.scene_data.sfx) {
+                    const sfx = response.scene_data.sfx;
+                    if (['sword', 'magic', 'fire', 'thunder', 'door', 'water'].includes(sfx)) {
+                        AudioManager.trigger(sfx === 'sword' ? 'hit' : sfx);
+                    }
+                }
             } catch (e) { /* silent */ }
         }
 
@@ -197,10 +210,12 @@ function rollDice(sides) {
         display.textContent = `🎲 d20: 20 ⚡ ¡CRÍTICO!`;
         display.classList.add('text-yellow-300', 'dice-critical');
         showToast('⚡ ¡GOLPE CRÍTICO! Nat 20', 'green');
+        if (window.AudioManager) try { AudioManager.trigger('victory'); } catch (e) {}
     } else if (isFumble) {
         display.textContent = `🎲 d20: 1 💀 FALLO TOTAL`;
         display.classList.add('text-red-400');
         showToast('💀 ¡Fallo Total! Nat 1', 'red');
+        if (window.AudioManager) try { AudioManager.trigger('heart'); } catch (e) {}
     } else {
         display.textContent = `🎲 d${sides}: ${result}`;
         display.classList.add('text-amber-400');
