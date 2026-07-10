@@ -39,13 +39,19 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 
 async def _run_migrations():
     """Ejecuta migraciones pendientes vía Alembic."""
-    import subprocess, sys
+    import asyncio, sys
     try:
-        subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"],
-                       capture_output=True, text=True, check=True)
-    except subprocess.CalledProcessError as exc:
-        logger = logging.getLogger(__name__)
-        logger.warning("migrations fallaron: %s, usando create_tables", exc.stderr.strip())
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, "-m", "alembic", "upgrade", "head",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        _, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            logger = logging.getLogger(__name__)
+            logger.warning("migrations fallaron: %s, usando create_tables", stderr.decode().strip())
+            await create_tables()
+    except Exception:
         await create_tables()
 
 
@@ -111,13 +117,16 @@ _allowed_origins = [
     "http://127.0.0.1:8000",
 ]
 if not settings.debug:
-    _allowed_origins.append("https://dragons-ia.onrender.com")
+    if settings.cors_origins:
+        _allowed_origins.extend(o.strip() for o in settings.cors_origins.split(","))
+    else:
+        _allowed_origins.append("https://dragons-ia.onrender.com")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
@@ -157,6 +166,8 @@ async def serve_index():
 @app.get("/{page}.html", include_in_schema=False)
 async def serve_page(page: str):
     """Sirve cualquier página HTML del frontend."""
+    if "/" in page or "\\" in page or ".." in page:
+        return FileResponse(str(FRONTEND_DIR / "index.html"))
     file_path = FRONTEND_DIR / f"{page}.html"
     if file_path.is_file():
         return FileResponse(str(file_path))

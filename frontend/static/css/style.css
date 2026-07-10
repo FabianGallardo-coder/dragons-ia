@@ -223,7 +223,6 @@ h1, h2, h3 {
 
 /* Input focus */
 input:focus, select:focus, textarea:focus {
-    ring: none;
     outline: none;
     border-color: var(--color-gold) !important;
 }

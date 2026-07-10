@@ -61,13 +61,6 @@
     <script src="/static/js/api.js"></script>
     <script src="/static/js/auth.js"></script>
     <script>
-        const WORLD_NAMES = {
-            fantasia: 'Fantasía Medieval',
-            ciencia_ficcion: 'Ciencia Ficción',
-            isekai: 'Isekai',
-            fantasia_oscura: 'Fantasía Oscura',
-        };
-
         document.addEventListener('DOMContentLoaded', () => {
             requireAuth();
             const charData = JSON.parse(localStorage.getItem('dia_pending_character') || 'null');

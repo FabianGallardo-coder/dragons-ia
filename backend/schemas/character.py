@@ -55,14 +55,6 @@ class CharacterResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class CharacterUpdate(BaseModel):
-    """Schema para actualizar stats del personaje (internamente)."""
-    hp_current: Optional[int] = None
-    level: Optional[int] = None
-    experience: Optional[int] = None
-    is_alive: Optional[bool] = None
-
-
 class CharacterEditRequest(BaseModel):
     """Schema para editar datos públicos del personaje."""
     name: Optional[str] = Field(None, min_length=2, max_length=100)

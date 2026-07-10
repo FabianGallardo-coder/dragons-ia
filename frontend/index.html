@@ -158,7 +158,7 @@
                         });
                     }
                 } catch (e) {
-                    // Sin partidas, no mostrar
+                    console.warn('Error al cargar partidas:', e);
                 }
             } else {
                 document.getElementById('guest-menu').classList.remove('hidden');

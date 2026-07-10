@@ -2,6 +2,7 @@
 Router de autenticación — Registro, login y perfil.
 """
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -138,7 +139,7 @@ async def forgot_password(
     reset = ResetToken(
         id=uuid.uuid4().hex,
         user_id=user.id,
-        token=pwd_context.hash(token),
+        token_hash=hashlib.sha256(token.encode()).hexdigest(),
         expires_at=expires,
     )
     db.add(reset)
@@ -157,22 +158,16 @@ async def reset_password(
     db: AsyncSession = Depends(get_db),
 ):
     """Resetea la contraseña usando un token válido."""
-    from sqlalchemy import func
-
     now = datetime.now(timezone.utc)
+    token_hash = hashlib.sha256(data.token.encode()).hexdigest()
     result = await db.execute(
         select(ResetToken).where(
+            ResetToken.token_hash == token_hash,
             ResetToken.used == False,
             ResetToken.expires_at > now,
         )
     )
-    tokens = result.scalars().all()
-
-    matched = None
-    for rt in tokens:
-        if pwd_context.verify(data.token, rt.token):
-            matched = rt
-            break
+    matched = result.scalar_one_or_none()
 
     if not matched:
         raise HTTPException(status_code=400, detail="Token inválido o expirado.")

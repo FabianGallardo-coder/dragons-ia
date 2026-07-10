@@ -6,7 +6,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from slowapi import Limiter
@@ -360,7 +360,7 @@ async def list_saves(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
     offset: int = 0,
-    limit: int = 50,
+    limit: int = Query(default=50, le=200),
 ):
     """Lista las partidas del usuario con paginación."""
     result = await db.execute(
@@ -477,7 +477,7 @@ async def list_ollama_models():
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"Error consultando Ollama: {exc}"
+            detail="Error interno del servidor."
         )
 
 
@@ -520,5 +520,5 @@ async def list_ollama_cloud_models(api_key: str = "", data: dict | None = None):
     except Exception as exc:
         raise HTTPException(
             status_code=500,
-            detail=f"Error consultando Ollama Cloud: {exc}"
+            detail="Error interno del servidor."
         )

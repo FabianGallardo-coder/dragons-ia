@@ -34,11 +34,12 @@ const WORLD_FONTS = {
 function applyWorldFont(world) {
     const font = WORLD_FONTS[world];
     if (!font) return;
+    const existing = document.querySelector(`link[href="${font.url}"]`);
+    if (existing) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = font.url;
     document.head.appendChild(link);
-    // Solo aplicar la fuente a la narrativa, no a los controles
     const container = document.getElementById('narrative-container');
     if (container) container.style.fontFamily = font.css;
 }
@@ -78,7 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         setAIStatus('ok');
 
         if (window.ImmersionEngine) {
-            window.ImmersionEngine.update({ narrative: 'Nueva aventura', character_alive: true, scene_data: { scene: 'tavern' } });
+            try {
+                window.ImmersionEngine.update({ narrative: 'Nueva aventura', character_alive: true, scene_data: { scene: 'tavern' } });
+            } catch (e) { console.warn('ImmersionEngine init error:', e); }
         }
     } catch (err) {
         setAIStatus('error');
@@ -136,7 +139,9 @@ async function handleAction(e) {
         setAIStatus('ok');
 
         if (window.ImmersionEngine) {
-            window.ImmersionEngine.update(response);
+            try {
+                window.ImmersionEngine.update(response);
+            } catch (e) { console.warn('ImmersionEngine update error:', e); }
         }
 
         // Verificar muerte del personaje
@@ -411,8 +416,9 @@ async function saveGame() {
 /**
  * Sale del juego y vuelve al inicio.
  */
-function exitGame() {
-    if (confirm('¿Seguro que querés salir? La partida se guarda automáticamente.')) {
+async function exitGame() {
+    if (confirm('¿Seguro que querés salir?')) {
+        await saveGame();
         location.href = '/';
     }
 }

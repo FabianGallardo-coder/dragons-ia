@@ -159,9 +159,9 @@ async def check_ollama_status() -> dict:
                     "best_model": best_model,
                 }
     except (httpx.ConnectError, httpx.TimeoutException) as e:
-        logger.info(f"Ollama no disponible en {ollama_url}: {e}")
+        logger.info("Ollama no disponible en %s: %s", ollama_url, e)
     except Exception as e:
-        logger.warning(f"Error inesperado verificando Ollama: {e}")
+        logger.warning("Error inesperado verificando Ollama: %s", e)
 
     return {
         "running": False,

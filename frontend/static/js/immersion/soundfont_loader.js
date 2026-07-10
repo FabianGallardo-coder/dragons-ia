@@ -23,7 +23,7 @@ const SoundFontLoader = {
             const { FluidSynth } = await this._loadSynth();
             this._synth = new FluidSynth(audioCtx);
 
-            const sf2Url = 'https://cdn.jsdelivr.net/gh/musescore/MuseScore@master/share/sound/FluidR3Mono.sf3';
+            const sf2Url = 'https://cdn.jsdelivr.net/gh/musescore/MuseScore@4.2.1/share/sound/FluidR3Mono.sf3';
             const res = await fetch(sf2Url);
             if (!res.ok) throw new Error('SF2 fetch failed');
             const sf2Buf = await res.arrayBuffer();

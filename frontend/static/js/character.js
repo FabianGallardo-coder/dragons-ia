@@ -12,13 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const WORLD_NAMES = {
-        fantasia: 'Fantasía Medieval',
-        ciencia_ficcion: 'Ciencia Ficción',
-        isekai: 'Isekai',
-        fantasia_oscura: 'Fantasía Oscura',
-    };
-
     document.getElementById('world-label').textContent =
         `Mundo: ${WORLD_NAMES[world] || world}`;
 

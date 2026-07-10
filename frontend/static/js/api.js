@@ -115,3 +115,10 @@ async function apiDelete(path) {
     }
     return true;
 }
+
+const WORLD_NAMES = {
+    fantasia: 'Fantasía Medieval',
+    ciencia_ficcion: 'Ciencia Ficción',
+    isekai: 'Isekai',
+    fantasia_oscura: 'Fantasía Oscura',
+};
