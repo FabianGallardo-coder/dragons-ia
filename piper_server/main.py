@@ -1,7 +1,6 @@
 import io
 import json
 import os
-import struct
 import subprocess
 import wave
 from pathlib import Path
@@ -72,8 +71,7 @@ class PiperHandler(BaseHTTPRequestHandler):
                 wf.setnchannels(1)
                 wf.setsampwidth(2)
                 wf.setframerate(22050)
-                for sample in raw_audio:
-                    wf.writeframes(struct.pack("<h", sample))
+                wf.writeframes(raw_audio)
             return self._send_audio(buf.getvalue())
 
         except subprocess.TimeoutExpired:

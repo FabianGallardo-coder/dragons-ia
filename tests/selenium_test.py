@@ -14,7 +14,10 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 import pytest
 
-pytestmark = pytest.mark.skip(reason="Requiere Selenium + ChromeDriver en el host")
+pytestmark = [
+    pytest.mark.selenium,
+    pytest.mark.skip(reason="Requiere Selenium + ChromeDriver en el host"),
+]
 
 BASE_URL = "http://localhost:8000"
 WAIT_TIME = 10
